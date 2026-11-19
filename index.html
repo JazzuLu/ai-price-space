@@ -84,6 +84,8 @@
       input:checked + .switch::after { transform: translateX(16px); }
       @keyframes spin { to { transform: rotate(360deg); } }
       .spinning svg { animation: spin .7s linear infinite; }
+      .no-scrollbar { scrollbar-width: none; }
+      .no-scrollbar::-webkit-scrollbar { display: none; }
       @media (prefers-reduced-motion: reduce) { .spinning svg { animation: none; } }
     </style>
   </head>
@@ -129,7 +131,8 @@
           </label>
           <button class="h-9 px-3.5 rounded-lg border bg-secondary text-secondary-foreground text-sm font-medium shadow-sm hover:bg-accent active:translate-y-px transition" id="reset" type="button">清除全部筛选</button>
         </div>
-        <div class="flex flex-wrap gap-1.5 mt-2.5" id="vendor-chips" aria-label="按厂商筛选"></div>
+        <div class="flex flex-nowrap gap-1.5 mt-2.5 overflow-x-auto no-scrollbar pb-0.5" id="vendor-chips" aria-label="按厂商筛选"></div>
+        <p id="lowest-line" class="text-xs text-muted-foreground mt-1.5" hidden></p>
         <div class="flex flex-wrap gap-2 items-center mt-2.5">
           <label class="inline-flex items-center gap-1.5 text-[13px]"><span class="text-muted-foreground whitespace-nowrap">产品线</span><select id="f-category" class="h-9 rounded-lg border border-input bg-card px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"><option value="">全部产品线</option></select></label>
           <label class="inline-flex items-center gap-1.5 text-[13px]"><span class="text-muted-foreground whitespace-nowrap">平台</span><select id="f-platform" class="h-9 rounded-lg border border-input bg-card px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"><option value="">全部平台</option></select></label>
@@ -137,7 +140,7 @@
           <label class="inline-flex items-center gap-1.5 text-[13px]"><span class="text-muted-foreground whitespace-nowrap">店铺</span><input id="f-shop" class="h-9 w-[170px] rounded-lg border border-input bg-card px-2.5 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" type="text" list="shop-list" placeholder="输入店名筛选" autocomplete="off" /><datalist id="shop-list"></datalist></label>
           <label class="inline-flex items-center gap-1.5 text-[13px]"><span class="text-muted-foreground whitespace-nowrap">价格</span><input id="p-min" class="h-9 w-[92px] rounded-lg border border-input bg-card px-2.5 text-sm font-mono tabular shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" type="number" min="0" step="0.01" placeholder="最低 ¥" /><span class="text-muted-foreground">—</span><input id="p-max" class="h-9 w-[92px] rounded-lg border border-input bg-card px-2.5 text-sm font-mono tabular shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" type="number" min="0" step="0.01" placeholder="最高 ¥" /></label>
           <label class="inline-flex items-center gap-1.5 text-[13px]"><span class="text-muted-foreground whitespace-nowrap">排序</span><select id="f-sort" class="h-9 rounded-lg border border-input bg-card px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-            <option value="">默认</option>
+            <option value="">推荐（有货优先）</option>
             <option value="asc">价格 低 → 高</option>
             <option value="desc">价格 高 → 低</option>
           </select></label>
@@ -169,6 +172,29 @@
         </ul>
         <p class="text-xs">库存口径：数字 = 库存件数；0 = 已缺货；只有「有货 / 缺货」标记的源，有货记 1 件、缺货记 0；源站未公开库存的记为「库存未公开」。价格为抓取时点的原站报价，可能已变动，下单前请以原站页面为准。去重规则：平台 + 店铺标识 + 标题 + 价格，同一商品优先保留直抓行（本次无直抓行），其次 AI价网、BiWu、水獭；PriceAI 与旧行同款时以更新鲜的 PriceAI 行替换。分类按厂商聚合：ChatGPT 各产品线归 OpenAI，Claude 归 Anthropic，Gemini 归 Google，Grok 归 xAI；「产品线」筛选保留原细分分类。「刷新数据」只重新拉取本页的数据文件，不会重新采集源站数据。</p>
       </footer>
+    </div>
+
+    <div id="exit-dialog" class="fixed inset-0 z-50" hidden role="dialog" aria-modal="true" aria-labelledby="exit-title">
+      <div class="absolute inset-0 bg-black/50" id="exit-backdrop"></div>
+      <div class="relative flex items-end sm:items-center justify-center h-full pointer-events-none">
+        <div class="pointer-events-auto w-full sm:max-w-md bg-card text-card-foreground border shadow-lg rounded-t-2xl sm:rounded-lg p-5 max-h-[85vh] overflow-y-auto">
+          <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-700 sm:hidden" aria-hidden="true"></div>
+          <h2 id="exit-title" class="text-base font-semibold">购买前先确认一下</h2>
+          <p id="exit-item" class="text-sm font-medium mt-2 break-words"></p>
+          <p class="text-[13px] text-muted-foreground mt-1.5 leading-relaxed">本站只做信息聚合，不卖货、不经手付款、不担保交易。价格与库存以原站页面为准。</p>
+          <div id="exit-hint-green" class="mt-3 rounded-md bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-3 py-2.5 text-[13px] leading-relaxed" hidden>该平台有平台售后机制：下单前确认套餐内容、有效期与质保范围，交易和售后请走平台订单与投诉入口，不要脱离平台私下付款。</div>
+          <div id="exit-hint-amber" class="mt-3 rounded-md bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 px-3 py-2.5 text-[13px] leading-relaxed" hidden>该店铺为商家自建站：付款前先联系商家确认可信度、发货方式与售后路径，不建议直接大额付款。</div>
+          <div id="exit-hint-red" class="mt-3 rounded-md bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300 px-3 py-2.5 text-[13px] leading-relaxed" hidden></div>
+          <label class="flex items-center gap-2 mt-4 text-sm cursor-pointer select-none">
+            <input id="exit-skip" type="checkbox" class="h-4 w-4 shrink-0" />
+            今天不再提示
+          </label>
+          <div class="flex gap-2 mt-5">
+            <button id="exit-cancel" type="button" class="flex-1 h-10 rounded-lg border bg-card text-sm font-medium shadow-sm hover:bg-accent transition">再看看</button>
+            <button id="exit-confirm" type="button" class="flex-1 h-10 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition">我已确认，前往购买</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script>
@@ -220,6 +246,51 @@
           if (stock === 0) return '<span class="inline-flex items-center rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 px-2 py-0.5 font-mono tabular text-xs font-semibold whitespace-nowrap">已缺货</span>';
           return '<span class="inline-flex items-center rounded-md border px-2 py-0.5 font-mono tabular text-xs font-medium text-muted-foreground whitespace-nowrap">库存未公开</span>';
         }
+        function titleFlags(title) {
+          var t = title || '';
+          return {
+            shared: /拼车|合租|车位/.test(t),
+            mirror: /镜像/.test(t),
+            web: /网页号|仅网页|纯网页/.test(t)
+          };
+        }
+        function compareRecommended(a, b) {
+          function stockRank(r) { return r.stock > 0 ? 0 : (r.stock === 0 ? 2 : 1); }
+          var d = stockRank(a) - stockRank(b);
+          if (d) return d;
+          var fa = titleFlags(a.title), fb = titleFlags(b.title);
+          d = (fa.shared ? 1 : 0) - (fb.shared ? 1 : 0);
+          if (d) return d;
+          d = (fa.mirror ? 1 : 0) - (fb.mirror ? 1 : 0);
+          if (d) return d;
+          d = (fa.web ? 1 : 0) - (fb.web ? 1 : 0);
+          if (d) return d;
+          d = a.price - b.price;
+          if (d) return d;
+          var ta = a.observed_at ? new Date(a.observed_at).getTime() : 0;
+          var tb = b.observed_at ? new Date(b.observed_at).getTime() : 0;
+          return tb - ta;
+        }
+        function relTime(iso) {
+          if (!iso) return '';
+          var t = new Date(iso).getTime();
+          if (isNaN(t)) return '';
+          var diff = Date.now() - t;
+          if (diff < 0) diff = 0;
+          var m = Math.floor(diff / 60000);
+          if (m < 1) return '刚刚';
+          if (m < 60) return m + '分钟前';
+          var h = Math.floor(m / 60);
+          if (h < 24) return h + '小时前';
+          var d = Math.floor(h / 24);
+          if (d < 30) return d + '天前';
+          return fmtTime(iso);
+        }
+        function isStale(iso) {
+          if (!iso) return false;
+          var t = new Date(iso).getTime();
+          return !isNaN(t) && (Date.now() - t > 24 * 3600 * 1000);
+        }
         function fillSelect(sel, values) {
           values.forEach(function (v) {
             var o = document.createElement('option');
@@ -232,12 +303,12 @@
         function renderVendorChips() {
           var counts = vendorCounts;
           var names = Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; });
-          var html = '<button type="button" data-vendor="" class="h-8 px-3 rounded-full border text-[13px] font-medium shadow-sm transition ' +
+          var html = '<button type="button" data-vendor="" class="h-8 px-3 rounded-full border text-[13px] font-medium shadow-sm transition shrink-0 whitespace-nowrap ' +
             (activeVendor === '' ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-accent') +
             '">全部厂商 <span class="font-mono tabular opacity-70">' + items.length.toLocaleString('zh-CN') + '</span></button>';
           names.forEach(function (name) {
             var on = activeVendor === name;
-            html += '<button type="button" data-vendor="' + esc(name) + '" class="h-8 px-3 rounded-full border text-[13px] font-medium shadow-sm transition ' +
+            html += '<button type="button" data-vendor="' + esc(name) + '" class="h-8 px-3 rounded-full border text-[13px] font-medium shadow-sm transition shrink-0 whitespace-nowrap ' +
               (on ? 'bg-primary text-primary-foreground' : 'bg-card hover:bg-accent') +
               '">' + esc(name) + ' <span class="font-mono tabular opacity-70">' + counts[name].toLocaleString('zh-CN') + '</span></button>';
           });
@@ -247,6 +318,7 @@
             btns[i].addEventListener('click', function () {
               activeVendor = this.getAttribute('data-vendor') || '';
               renderVendorChips();
+              rebuildCategory();
               applyFilters();
             });
           }
@@ -278,9 +350,35 @@
 
           if (els.sort.value === 'asc') filtered.sort(function (a, b) { return a.price - b.price; });
           else if (els.sort.value === 'desc') filtered.sort(function (a, b) { return b.price - a.price; });
+          else filtered.sort(compareRecommended);
 
           page = 1;
           render();
+        }
+
+        function updateLowestLine() {
+          var el = $('lowest-line');
+          if (!filtered.length) { el.hidden = true; el.innerHTML = ''; return; }
+          var best = null, excluded = null;
+          filtered.forEach(function (r) {
+            if (!(r.stock > 0)) return;
+            var f = titleFlags(r.title);
+            if (!f.shared && !f.mirror && !f.web) {
+              if (!best || r.price < best.price) best = r;
+            } else if (!excluded || r.price < excluded.price) {
+              excluded = r;
+            }
+          });
+          var parts = [];
+          if (best) parts.push('当前筛选最低价 <b class="text-foreground font-mono tabular font-semibold">¥' + fmtPrice(best.price) + '</b>（有货，已排除拼车 / 镜像 / 网页号）');
+          if (excluded && (!best || excluded.price < best.price)) {
+            var f2 = titleFlags(excluded.title);
+            var label = f2.shared ? '拼车价' : (f2.mirror ? '镜像价' : '网页价');
+            parts.push(label + ' <span class="font-mono tabular">¥' + fmtPrice(excluded.price) + '</span> 起（不计入主价）');
+          }
+          if (!parts.length) { el.hidden = true; el.innerHTML = ''; return; }
+          el.innerHTML = parts.join(' · ');
+          el.hidden = false;
         }
 
         function render() {
@@ -292,6 +390,7 @@
 
           els.resultLine.innerHTML = '共 <b class="text-foreground font-mono tabular font-semibold">' + total.toLocaleString('zh-CN') + '</b> 条报价' +
             (total ? ' · 当前显示第 ' + (start + 1) + '–' + (start + slice.length) + ' 条' : '');
+          updateLowestLine();
 
           els.empty.hidden = total !== 0;
           els.grid.hidden = total === 0;
@@ -301,8 +400,9 @@
           for (var i = 0; i < slice.length; i++) {
             var r = slice[i];
             var buyUrl = r.item_url || r.shop_url || '';
+            var exitAttrs = ' data-exit data-title="' + esc(r.title) + '" data-platform="' + esc(r.platform) + '" data-price="' + (r.price != null ? r.price : '') + '"';
             var shopHtml = r.shop_url
-              ? '<a class="flex-1 min-w-0 text-[13.5px] text-muted-foreground truncate no-underline hover:text-foreground hover:underline" href="' + esc(r.shop_url) + '" target="_blank" rel="noopener" title="' + esc(r.shop_name) + '">' + esc(r.shop_name) + '</a>'
+              ? '<a class="flex-1 min-w-0 text-[13.5px] text-muted-foreground truncate no-underline hover:text-foreground hover:underline" href="' + esc(r.shop_url) + '" target="_blank" rel="noopener" title="' + esc(r.shop_name) + '"' + exitAttrs + '>' + esc(r.shop_name) + '</a>'
               : '<span class="flex-1 min-w-0 text-[13.5px] text-muted-foreground truncate" title="' + esc(r.shop_name) + '">' + esc(r.shop_name) + '</span>';
             html += '<article class="rounded-lg border bg-card text-card-foreground shadow-sm p-3.5 flex flex-col gap-2.5 hover:shadow-md transition-shadow">' +
               '<div class="flex flex-wrap gap-1.5 items-center">' +
@@ -313,9 +413,13 @@
               '<div class="flex items-baseline gap-2.5 mt-auto flex-wrap"><span class="font-mono tabular text-2xl font-bold tracking-tight"><span class="text-sm font-semibold">¥</span>' + fmtPrice(r.price) + '</span>' +
               (r.market_price != null ? '<span class="font-mono tabular text-[13px] text-muted-foreground line-through">¥' + fmtPrice(r.market_price) + '</span>' : '') +
               stockHtml(r.stock) + '</div>' +
+              '<div class="flex items-center gap-2 text-xs text-muted-foreground">' +
+              (r.observed_at ? '<span>更新于 ' + esc(relTime(r.observed_at)) + '</span>' : '<span>更新时间未知</span>') +
+              (isStale(r.observed_at) ? '<span class="inline-flex items-center rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 px-1.5 py-0.5 font-mono text-[10.5px] font-medium whitespace-nowrap">待核验</span>' : '') +
+              '</div>' +
               '<div class="flex items-center gap-2.5 border-t pt-2.5">' + shopHtml +
               (buyUrl
-                ? '<a class="shrink-0 inline-flex items-center h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition" href="' + esc(buyUrl) + '" target="_blank" rel="noopener">去购买</a>'
+                ? '<a class="shrink-0 inline-flex items-center h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition" href="' + esc(buyUrl) + '" target="_blank" rel="noopener"' + exitAttrs + '>去购买</a>'
                 : '<span class="shrink-0 inline-flex items-center h-9 px-4 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">暂无购买链接</span>') +
               '</div></article>';
           }
@@ -333,6 +437,58 @@
           page = Math.min(Math.max(1, p), pages);
           render();
           window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        var catGroups = [];
+        function buildCatGroups() {
+          var perVendor = {};
+          items.forEach(function (r) {
+            var v = r.vendor || '其他';
+            perVendor[v] = perVendor[v] || {};
+            perVendor[v][r.category] = (perVendor[v][r.category] || 0) + 1;
+          });
+          var totals = {};
+          Object.keys(perVendor).forEach(function (v) {
+            totals[v] = Object.keys(perVendor[v]).reduce(function (s, c) { return s + perVendor[v][c]; }, 0);
+          });
+          var prio = ['OpenAI', 'xAI', 'Anthropic', 'Google'];
+          var names = Object.keys(perVendor).sort(function (a, b) {
+            var pa = prio.indexOf(a), pb = prio.indexOf(b);
+            if (pa !== -1 || pb !== -1) return (pa === -1 ? 99 : pa) - (pb === -1 ? 99 : pb);
+            return totals[b] - totals[a];
+          });
+          catGroups = names.map(function (v) {
+            var cats = Object.keys(perVendor[v])
+              .map(function (c) { return [c, perVendor[v][c]]; })
+              .sort(function (a, b) { return b[1] - a[1]; });
+            return { vendor: v, total: totals[v], cats: cats };
+          });
+        }
+        function rebuildCategory() {
+          var sel = els.category;
+          var cur = sel.value;
+          sel.innerHTML = '';
+          var o0 = document.createElement('option');
+          o0.value = '';
+          o0.textContent = '全部产品线';
+          sel.appendChild(o0);
+          catGroups.forEach(function (g) {
+            if (activeVendor && g.vendor !== activeVendor) return;
+            var og = document.createElement('optgroup');
+            og.label = g.vendor + '（' + g.total.toLocaleString('zh-CN') + '）';
+            g.cats.forEach(function (pair) {
+              var o = document.createElement('option');
+              o.value = pair[0];
+              o.textContent = pair[0] + '（' + pair[1].toLocaleString('zh-CN') + '）';
+              og.appendChild(o);
+            });
+            sel.appendChild(og);
+          });
+          var ok = false;
+          for (var i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === cur) { ok = true; break; }
+          }
+          sel.value = ok ? cur : '';
         }
 
         function populate(data) {
@@ -368,8 +524,9 @@
           }
           rebuild(els.platform, byCount(platforms));
           rebuild(els.source, byCount(sources));
-          rebuild(els.category, byCount(categories));
-          if (activeVendor && !vendors[activeVendor]) activeVendor = '';
+          buildCatGroups();
+          rebuildCategory();
+          if (activeVendor && !vendors[activeVendor]) { activeVendor = ''; rebuildCategory(); }
           renderVendorChips();
           shops.sort();
           els.shopList.innerHTML = '';
@@ -429,6 +586,7 @@
           els.pMin.value = ''; els.pMax.value = ''; els.sort.value = '';
           els.inStock.checked = false;
           if (activeVendor) { activeVendor = ''; renderVendorChips(); }
+          rebuildCategory();
           applyFilters();
         });
         els.btnRefresh.addEventListener('click', function () { loadData(true); });
@@ -441,6 +599,53 @@
             els.refreshNote.textContent = '自动刷新已关闭。';
           }
         });
+        var GREEN_PLATFORMS = { 'wzyp': true, '16688': true, '云猫': true };
+        var exitSuppress = false;
+        var exitPendingUrl = null;
+        var exitDialog = $('exit-dialog');
+        function openExit(url, title, platform, price) {
+          exitPendingUrl = url;
+          $('exit-item').textContent = title || '';
+          var green = !!GREEN_PLATFORMS[platform];
+          $('exit-hint-green').hidden = !green;
+          $('exit-hint-amber').hidden = green;
+          var red = $('exit-hint-red');
+          if (price != null && !isNaN(price) && price >= 500) {
+            red.textContent = '这条报价价格较高（¥' + fmtPrice(price) + '）：付款前请先核对商家信誉、质保与售后条款，确认无误再下单。';
+            red.hidden = false;
+          } else {
+            red.hidden = true;
+          }
+          $('exit-skip').checked = false;
+          exitDialog.hidden = false;
+          document.body.style.overflow = 'hidden';
+        }
+        function closeExit() {
+          exitDialog.hidden = true;
+          exitPendingUrl = null;
+          document.body.style.overflow = '';
+        }
+        els.grid.addEventListener('click', function (e) {
+          var a = e.target && e.target.closest ? e.target.closest('a[data-exit]') : null;
+          if (!a) return;
+          var url = a.getAttribute('href');
+          if (!url) return;
+          e.preventDefault();
+          if (exitSuppress) { window.open(url, '_blank', 'noopener'); return; }
+          openExit(url, a.getAttribute('data-title') || '', a.getAttribute('data-platform') || '', parseFloat(a.getAttribute('data-price')));
+        });
+        $('exit-cancel').addEventListener('click', closeExit);
+        $('exit-backdrop').addEventListener('click', closeExit);
+        $('exit-confirm').addEventListener('click', function () {
+          if ($('exit-skip').checked) exitSuppress = true;
+          var url = exitPendingUrl;
+          closeExit();
+          if (url) window.open(url, '_blank', 'noopener');
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape' && !exitDialog.hidden) closeExit();
+        });
+
         $('pg-first').addEventListener('click', function () { gotoPage(1); });
         $('pg-prev').addEventListener('click', function () { gotoPage(page - 1); });
         $('pg-next').addEventListener('click', function () { gotoPage(page + 1); });
