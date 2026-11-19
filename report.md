@@ -1,6 +1,6 @@
 # AI 聚合比价 · 数据报告
 
-生成时间：2026-11-19T21:41:26+08:00 · 数据文件：`data.json`（同目录）
+生成时间：2026-11-19T21:55:22+08:00 · 数据文件：`data.json`（同目录）
 本报告所有数字均由 `data.json` 的 `items` 数组复算，复算方法见文末。
 
 ## 总览
@@ -100,6 +100,90 @@ category（产品线）保留，新增 vendor（厂商）字段：同品牌商�
 | Microsoft | 4 | 0.0% | Copilot |
 | PayPal | 3 | 0.0% | PayPal |
 
+## 标准商品分布
+
+2026-11-19 21:52 起新增 `product`（标准商品 slug）+ `product_label` 字段，共 77 个标准商品：PriceAI 快照 66 商品与 CardNav autoCategory 统一成一套 slug（Pro 按 100/200/500 刀档 × 代充/成品号拆，Max 按代充/成品号拆，Ultra 按 5x/20x 拆，Plus 按试用/正价拆）。归类三路：CardNav 行按 item_url 回查原始 autoCategory（34391 行）+ 品牌级 autoCategory 按标题定商品（1682 行）；PriceAI 行按（标题，价格，店名）回查快照 top_offers（314/315 行）；其余按 category 基线 + 标题关键词（10173 行）。全局纠正：Pro 100 档标题含 team 的实为 Team 5x/10x，已改归 Team。剩余 `other-product` 2147 行（4.6%）是 CapCut、Runway、Kling、Figma 等非 AI 长尾商品，属实·其他。
+
+| 标准商品 | 行数 | 占比 |
+|---|---|---|
+| ChatGPT Plus 试用订阅 (`chatgpt-plus`) | 8028 | 17.2% |
+| OpenAI / ChatGPT 接码 (`sms-openai`) | 2639 | 5.7% |
+| ChatGPT Pro 100刀档 代充 (`chatgpt-pro-100`) | 2345 | 5.0% |
+| 其他商品 (`other-product`) | 2147 | 4.6% |
+| Gmail / Google 邮箱 (`gmail-account`) | 2038 | 4.4% |
+| Outlook / Hotmail 邮箱 (`outlook-account`) | 1925 | 4.1% |
+| ChatGPT Pro 200刀档 代充 (`chatgpt-pro-200`) | 1822 | 3.9% |
+| ChatGPT 普号 (`chatgpt-free-account`) | 1668 | 3.6% |
+| ChatGPT Plus 正价代充 (`chatgpt-plus-recharge`) | 1435 | 3.1% |
+| ChatGPT Team 5x (`chatgpt-team-5x`) | 1146 | 2.5% |
+| Codex 额度充值 (`codex-credits`) | 1094 | 2.3% |
+| ChatGPT Team 10x (`chatgpt-team-10x`) | 1012 | 2.2% |
+| Gemini Pro 充值/开通 (`gemini-pro`) | 960 | 2.1% |
+| ChatGPT Team (`chatgpt-team`) | 927 | 2.0% |
+| Muse AI 账号 (`muse-ai-account`) | 915 | 2.0% |
+| Claude 普号 / 兑换号 (`claude-account`) | 868 | 1.9% |
+| 中转站 / API 网关 (`api-gateway`) | 866 | 1.9% |
+| Gemini Pro 成品号 (`gemini-pro-account`) | 841 | 1.8% |
+| Apple ID / 苹果账号 (`apple-id-account`) | 823 | 1.8% |
+| ChatGPT Pro 500刀档 代充 (`chatgpt-pro-500`) | 770 | 1.7% |
+| Grok Super (`grok-super`) | 743 | 1.6% |
+| 通用接码 (`sms-generic`) | 529 | 1.1% |
+| ChatGPT Go (`chatgpt-go`) | 521 | 1.1% |
+| iCloud 邮箱 (`icloud-email`) | 512 | 1.1% |
+| Grok Ultra (`grok-ultra`) | 511 | 1.1% |
+| Claude Pro 代充 (`claude-pro`) | 509 | 1.1% |
+| Telegram 账号 (`telegram-account`) | 495 | 1.1% |
+| Gemini 账号 (`gemini-account`) | 451 | 1.0% |
+| Grok Premium (`grok-premium`) | 446 | 1.0% |
+| Grok 普号 / 体验号 (`grok-account`) | 415 | 0.9% |
+| 其他邮箱 (`email-account`) | 414 | 0.9% |
+| Claude Max 5x 代充 (`claude-max-5x`) | 393 | 0.8% |
+| 真人 / KYC 验证 (`kyc`) | 367 | 0.8% |
+| 虚拟卡 (`virtual-card`) | 355 | 0.8% |
+| Claude Max 20x 代充 (`claude-max-20x`) | 352 | 0.8% |
+| Google AI Ultra 20x (`gemini-ultra-20x`) | 352 | 0.8% |
+| Google / Gemini 接码 (`sms-google`) | 348 | 0.7% |
+| Grok Plus (`grok-plus`) | 336 | 0.7% |
+| 社媒账号 (`social-media-account`) | 312 | 0.7% |
+| TikTok 账号 (`tiktok-account`) | 292 | 0.6% |
+| Dreamina / 即梦 (`dreamina-account`) | 287 | 0.6% |
+| Claude / Anthropic 接码 (`sms-claude`) | 275 | 0.6% |
+| Claude Pro 成品号 (`claude-pro-account`) | 263 | 0.6% |
+| Google AI Ultra 5x (`gemini-ultra-5x`) | 241 | 0.5% |
+| Gemini Plus (`gemini-plus`) | 203 | 0.4% |
+| ChatGPT Pro 100刀档 成品号 (`chatgpt-pro-100-account`) | 192 | 0.4% |
+| Cursor 接码 (`sms-cursor`) | 182 | 0.4% |
+| Kiro Pro / 额度号 (`kiro-pro`) | 171 | 0.4% |
+| X / 推特账号 (`x-account`) | 170 | 0.4% |
+| Meta / Muse 接码 (`sms-muse`) | 161 | 0.3% |
+| Claude Max 20x 成品号 (`claude-max-20x-account`) | 134 | 0.3% |
+| ChatGPT Pro 200刀档 成品号 (`chatgpt-pro-200-account`) | 130 | 0.3% |
+| Cursor 账号 (`cursor-account`) | 127 | 0.3% |
+| Cursor Ultra (`cursor-ultra`) | 104 | 0.2% |
+| Claude Max 5x 成品号 (`claude-max-5x-account`) | 103 | 0.2% |
+| Instagram / Threads 接码 (`sms-instagram`) | 96 | 0.2% |
+| Notion 商业版 (`notion-business`) | 86 | 0.2% |
+| Kiro 普号 / Free (`kiro-account`) | 75 | 0.2% |
+| PayPal 接码 (`sms-paypal`) | 71 | 0.2% |
+| 教育邮箱 (`education-email`) | 65 | 0.1% |
+| Cursor Pro (`cursor-pro`) | 62 | 0.1% |
+| Cursor Free (`cursor-free`) | 57 | 0.1% |
+| 提链卡密 (`topup-card`) | 57 | 0.1% |
+| ChatGPT Pro 500刀档 成品号 (`chatgpt-pro-500-account`) | 56 | 0.1% |
+| Codex / ChatGPT 周边与自助服务 (`codex-service`) | 42 | 0.1% |
+| Telegram Premium / Pro 会员 (`telegram-premium`) | 40 | 0.1% |
+| Perplexity 账号 (`perplexity-account`) | 32 | 0.1% |
+| Suno 账号 (`suno-account`) | 28 | 0.1% |
+| Claude Team Standard (`claude-team-standard`) | 27 | 0.1% |
+| X Premium / 推特会员 (`x-premium`) | 27 | 0.1% |
+| 礼品卡 (`gift-card`) | 23 | 0.0% |
+| 多邻国 Super 会员 (`duolingo-super`) | 23 | 0.0% |
+| Copilot (`copilot`) | 10 | 0.0% |
+| Claude Team Premium (`claude-team-premium`) | 5 | 0.0% |
+| Claude KYC 认证 (`claude-kyc`) | 5 | 0.0% |
+| Windsurf 账号 (`windsurf-account`) | 5 | 0.0% |
+| PayPal (`paypal`) | 3 | 0.0% |
+
 ## 口径与缺口
 
 - **直抓缺口**：链动小铺（wzyp 909 家店）与云猫（100 家店）本次 0 行，需真实浏览器会话过一次 ESA 验证、保住 cookies 后再调 goodsList 分页拉取。9 月快照（Samge0/wzyp-view，250 家店 / 11042 件商品）未并入，因非当日数据。
@@ -108,7 +192,7 @@ category（产品线）保留，新增 vendor（厂商）字段：同品牌商�
 - **AI价网链接口径**：md 层不给原站单品链接，`item_url` 为 AI价网分类页，`shop_url` 为 AI价网店铺页；原站店铺链接仅 wzyp 可推导（wzyp.cn/shop/\<token>）。
 - **水獭链接口径**：`platform` 未知记为“未知”，`shop_id` 暂用店名，`item_url` 仅 3 行有值。
 - **市场价**：各源均未提供有效市场价，`market_price` 全为空。
-- **PriceAI**：2026-11-19 21:01 Jazzu 决定自用研究不考虑许可限制后，已并入其公开快照（data.priceai.cc/latest.json → 当日快照，66 商品、每品最多 5 条 top offers，共 325 条，抓取时间 2026-11-19T20:56+08:00）。并入 302 条新行，13 条以更新鲜的 PriceAI 行替换同款旧行，9 条无效剔除（5 条 ¥0、4 条过期）。全量报价 API（/api/products/[id]/offers，约 15855 条）已验证可用（真实浏览器与 Chrome UA curl 均 200），但 2026-11-19 21:28 起的全量拉取被 429 限流（每商品 2 次均 429，0 行拉回），待限流解除后以更慢节律重拉。
+- **PriceAI**：2026-11-19 21:01 Jazzu 决定自用研究不考虑许可限制后，已并入其公开快照（data.priceai.cc/latest.json → 当日快照，66 商品、每品最多 5 条 top offers，共 325 条，抓取时间 2026-11-19T20:56+08:00）。并入 302 条新行，13 条以更新鲜的 PriceAI 行替换同款旧行，9 条无效剔除（5 条 ¥0、4 条过期）。全量报价 API（/api/products/[id]/offers，约 15855 条）已验证可用（真实浏览器与 Chrome UA curl 均 200），但 2026-11-19 21:28 起的全量拉取被 429 限流：本机 IP（2 秒/页，66 商品全灭 0 行）与新加坡 VPS（10 秒/页，首商品退避 30/60/120 秒后仍 429）均被拦，两边拉取已停；单次探测是通的，连续拉就拦，限流按请求速率触发。快照 315 行已在库里，全量等限流解除或换浏览器会话再说。
 - **CardNav**：2026-11-19 21:32 找到批量口径并并入：公开 JSON `GET https://cardnav.xyz/api/shop-products.json`（仓库 `src/pages/api/shop-products.json.ts`，无鉴权），一次返回 8.8MB：1009 家店、2623 个分类、40493 件商品；行是位置数组，按仓库 `src/shop-products-data.ts` 的 pack 规则解码（店 10 位、商品 12 位，分类与价格单位另有对照表）。分类按 autoCategory 直映射 + 标题关键词兜底归类；平台按商品链接 host 派生（wzyp / 16688 / catfk→云猫 / 其余自建站）；去重仅当新行更新鲜才替换旧行。
 - **AIPricedb、模真真**：均为闭源、无公开许可，无批量拉取口径，只能顺着线索去原站核对（新店发现、验真报告），不能批量拉取。模真真的验真报告可作中转站风险线索。
 - **开源站调研结论（2026-11-19）**：唯一数据本身明确 CC BY 4.0 的卡网报价源仍是 AI价网（已在用）。顺带核实的两个可合法新增的候选只覆盖官方按量 API 价、不含卡网转售价，且与订阅价单位不同，需单独成组，尚未并入：API Price Index（apipriceindex.com，996 个 LLM API 报价，数据集 CC BY 4.0）和 AICostBudget 的 ai-api-pricing-data（196 个模型）；使用前须再对一次许可。
