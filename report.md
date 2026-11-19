@@ -1,16 +1,16 @@
 # AI 聚合比价 · 数据报告
 
-生成时间：2026-11-19T22:07:50+08:00 · 数据文件：`data.json`（同目录）
+生成时间：2026-11-19T22:23:37+08:00 · 数据文件：`data.json`（同目录）
 本报告所有数字均由 `data.json` 的 `items` 数组复算，复算方法见文末。
 
 ## 总览
 
-- 报价总行数：**46604**
-- 覆盖店铺数：**1624**（按 平台+店铺标识 去重）
+- 报价总行数：**44868**
+- 覆盖店铺数：**1629**（按 平台+店铺标识 去重）
 - 分类数：**44**
 - 厂商数：**26**
 - 价格区间：¥0.01 ~ ¥99135
-- 数据观察时间：AI价网 2026-11-19T18:27:39+08:00；BiWu 2026-11-19T18:28:10+08:00；水獭 2026-11-14T12:37:00+08:00（5 天前缓存，见口径说明）；PriceAI 2026-11-19T20:56:00+08:00；CardNav 2026-11-19T20:00:07+08:00
+- 数据观察时间：AI价网 2026-11-19T18:27:39+08:00；BiWu 2026-11-19T18:28:10+08:00；水獭 2026-11-14T12:37:00+08:00（5 天前缓存，见口径说明）；PriceAI 2026-11-19T20:56:00+08:00；CardNav 2026-11-19T22:06:49+08:00
 
 ## 各源净增
 
@@ -22,7 +22,8 @@
 | 水獭 | 20 | 20 | 0 | 0 | 0 |
 | PriceAI | 325 | 302 | 14 | 9 | 0 |
 | PriceAI | 325 | 44 | 272 | 9 | 0 |
-| CardNav | 40493 | 0 | 40377 | 80 | 0 |
+| PriceAI | 325 | 9 | 307 | 9 | 0 |
+| CardNav | 40502 | 622 | 39764 | 80 | 0 |
 
 - 去重键：平台 + 店铺标识 + 标题 + 价格（无商品标识时的 fallback）；冲突时保留观察时间最新的一行。
 - PriceAI 14 条去重中，13 条以更新鲜的 PriceAI 行替换了同款旧行（BiWu 5、AI价网 8），1 条为快照内重复；PriceAI 行现存 315 行。9 条无效为 5 条 ¥0 价 + 4 条已过期报价。
@@ -37,36 +38,36 @@
 
 | 平台 | 行数 | 占比 | 店铺数 |
 |---|---|---|---|
-| wzyp | 32102 | 68.9% | 955 |
-| 自建站 | 6146 | 13.2% | 296 |
-| 16688 | 5735 | 12.3% | 240 |
-| 云猫 | 1582 | 3.4% | 92 |
-| Kami | 872 | 1.9% | 18 |
-| 独角数卡 | 147 | 0.3% | 8 |
+| wzyp | 31833 | 70.9% | 956 |
+| 16688 | 5746 | 12.8% | 246 |
+| 自建站 | 4756 | 10.6% | 296 |
+| 云猫 | 1543 | 3.4% | 91 |
+| Kami | 841 | 1.9% | 18 |
+| 独角数卡 | 129 | 0.3% | 7 |
 | 未知 | 20 | 0.0% | 15 |
 
 ## 库存分布
 
 | 状态 | 行数 | 占比 | 口径 |
 |---|---|---|---|
-| 有货 | 37043 | 79.5% | stock > 0（数字为件数；仅有有货标记的源记 1） |
-| 缺货 | 9420 | 20.2% | stock = 0 |
+| 有货 | 35783 | 79.8% | stock > 0（数字为件数；仅有有货标记的源记 1） |
+| 缺货 | 8944 | 19.9% | stock = 0 |
 | 库存未公开 | 141 | 0.3% | stock = -1 |
 
 ## 分类 Top 10
 
 | 分类 | 行数 |
 |---|---|
-| ChatGPT Plus | 9490 |
-| ChatGPT Pro | 5222 |
-| 邮箱 | 5118 |
-| 接码 | 4318 |
-| ChatGPT Team | 2990 |
-| 其他 | 2878 |
-| Gemini Pro | 1803 |
-| ChatGPT 账号 | 1455 |
-| Codex | 1263 |
-| 中转站 | 874 |
+| ChatGPT Plus | 9278 |
+| ChatGPT Pro | 5068 |
+| 邮箱 | 4744 |
+| 接码 | 4262 |
+| ChatGPT Team | 2969 |
+| 其他 | 2818 |
+| Gemini Pro | 1765 |
+| ChatGPT 账号 | 1412 |
+| Codex | 1182 |
+| 中转站 | 861 |
 
 ## 厂商分布
 
@@ -74,29 +75,29 @@ category（产品线）保留，新增 vendor（厂商）字段：同品牌商�
 
 | 厂商 | 行数 | 占比 | 包含的产品线 |
 |---|---|---|---|
-| OpenAI | 20936 | 44.9% | ChatGPT Go / ChatGPT Plus / ChatGPT Pro / ChatGPT Team / ChatGPT 账号 / Codex |
-| 邮箱 | 5118 | 11.0% | 邮箱 |
-| 接码 | 4318 | 9.3% | 接码 |
-| Google | 3061 | 6.6% | Gemini Plus / Gemini Pro / Gemini Ultra / Gemini 账号 |
-| 其他 | 2878 | 6.2% | 其他 |
-| Anthropic | 2610 | 5.6% | Claude Max 20x / Claude Max 5x / Claude Pro / Claude Team / Claude 账号 |
-| xAI | 2329 | 5.0% | Grok Plus / Grok Premium / Grok Super / Grok Ultra / Grok 账号 / SuperGrok Heavy / SuperGrok Lite |
-| 中转站 | 874 | 1.9% | 中转站 |
-| Muse AI | 866 | 1.9% | Muse AI |
-| Apple ID | 818 | 1.8% | Apple ID |
-| Telegram | 530 | 1.1% | Telegram |
-| KYC | 375 | 0.8% | KYC |
-| 虚拟卡 | 355 | 0.8% | 虚拟卡 |
-| Cursor | 347 | 0.7% | Cursor |
+| OpenAI | 20403 | 45.5% | ChatGPT Go / ChatGPT Plus / ChatGPT Pro / ChatGPT Team / ChatGPT 账号 / Codex |
+| 邮箱 | 4744 | 10.6% | 邮箱 |
+| 接码 | 4262 | 9.5% | 接码 |
+| Google | 2994 | 6.7% | Gemini Plus / Gemini Pro / Gemini Ultra / Gemini 账号 |
+| 其他 | 2818 | 6.3% | 其他 |
+| Anthropic | 2550 | 5.7% | Claude Max 20x / Claude Max 5x / Claude Pro / Claude Team / Claude 账号 |
+| xAI | 2255 | 5.0% | Grok Plus / Grok Premium / Grok Super / Grok Ultra / Grok 账号 / SuperGrok Heavy / SuperGrok Lite |
+| 中转站 | 861 | 1.9% | 中转站 |
+| Muse AI | 860 | 1.9% | Muse AI |
+| Telegram | 492 | 1.1% | Telegram |
+| Apple ID | 416 | 0.9% | Apple ID |
+| KYC | 363 | 0.8% | KYC |
+| 虚拟卡 | 350 | 0.8% | 虚拟卡 |
+| Cursor | 339 | 0.8% | Cursor |
 | TikTok | 283 | 0.6% | TikTok |
-| 即梦 | 262 | 0.6% | 即梦 |
-| Kiro | 248 | 0.5% | Kiro |
-| X | 203 | 0.4% | X |
+| 即梦 | 261 | 0.6% | 即梦 |
+| Kiro | 241 | 0.5% | Kiro |
+| X | 187 | 0.4% | X |
 | Notion | 88 | 0.2% | Notion |
 | Suno | 26 | 0.1% | Suno |
-| Perplexity | 24 | 0.1% | Perplexity |
-| 多邻国 | 23 | 0.0% | 多邻国 |
+| 多邻国 | 23 | 0.1% | 多邻国 |
 | 礼品卡 | 20 | 0.0% | 礼品卡 |
+| Perplexity | 20 | 0.0% | Perplexity |
 | Windsurf | 5 | 0.0% | Windsurf |
 | Microsoft | 4 | 0.0% | Copilot |
 | PayPal | 3 | 0.0% | PayPal |
@@ -107,79 +108,79 @@ category（产品线）保留，新增 vendor（厂商）字段：同品牌商�
 
 | 标准商品 | 行数 | 占比 |
 |---|---|---|
-| ChatGPT Plus 试用订阅 (`chatgpt-plus`) | 8033 | 17.2% |
-| OpenAI / ChatGPT 接码 (`sms-openai`) | 2640 | 5.7% |
-| ChatGPT Pro 100刀档 代充 (`chatgpt-pro-100`) | 2346 | 5.0% |
-| 其他商品 (`other-product`) | 2148 | 4.6% |
-| Gmail / Google 邮箱 (`gmail-account`) | 2038 | 4.4% |
-| Outlook / Hotmail 邮箱 (`outlook-account`) | 1926 | 4.1% |
-| ChatGPT Pro 200刀档 代充 (`chatgpt-pro-200`) | 1822 | 3.9% |
-| ChatGPT 普号 (`chatgpt-free-account`) | 1669 | 3.6% |
-| ChatGPT Plus 正价代充 (`chatgpt-plus-recharge`) | 1435 | 3.1% |
-| ChatGPT Team 5x (`chatgpt-team-5x`) | 1146 | 2.5% |
-| Codex 额度充值 (`codex-credits`) | 1094 | 2.3% |
-| ChatGPT Team 10x (`chatgpt-team-10x`) | 1012 | 2.2% |
-| Gemini Pro 充值/开通 (`gemini-pro`) | 961 | 2.1% |
-| ChatGPT Team (`chatgpt-team`) | 930 | 2.0% |
-| Muse AI 账号 (`muse-ai-account`) | 916 | 2.0% |
-| Claude 普号 / 兑换号 (`claude-account`) | 871 | 1.9% |
-| 中转站 / API 网关 (`api-gateway`) | 866 | 1.9% |
-| Gemini Pro 成品号 (`gemini-pro-account`) | 841 | 1.8% |
-| Apple ID / 苹果账号 (`apple-id-account`) | 825 | 1.8% |
-| ChatGPT Pro 500刀档 代充 (`chatgpt-pro-500`) | 771 | 1.7% |
-| Grok Super (`grok-super`) | 743 | 1.6% |
-| 通用接码 (`sms-generic`) | 529 | 1.1% |
-| ChatGPT Go (`chatgpt-go`) | 522 | 1.1% |
-| iCloud 邮箱 (`icloud-email`) | 513 | 1.1% |
-| Grok Ultra (`grok-ultra`) | 511 | 1.1% |
-| Claude Pro 代充 (`claude-pro`) | 510 | 1.1% |
-| Telegram 账号 (`telegram-account`) | 496 | 1.1% |
-| Gemini 账号 (`gemini-account`) | 451 | 1.0% |
-| Grok Premium (`grok-premium`) | 446 | 1.0% |
-| Grok 普号 / 体验号 (`grok-account`) | 420 | 0.9% |
-| 其他邮箱 (`email-account`) | 414 | 0.9% |
-| Claude Max 5x 代充 (`claude-max-5x`) | 393 | 0.8% |
-| 真人 / KYC 验证 (`kyc`) | 368 | 0.8% |
-| 虚拟卡 (`virtual-card`) | 355 | 0.8% |
-| Google AI Ultra 20x (`gemini-ultra-20x`) | 353 | 0.8% |
-| Claude Max 20x 代充 (`claude-max-20x`) | 352 | 0.8% |
-| Google / Gemini 接码 (`sms-google`) | 348 | 0.7% |
-| Grok Plus (`grok-plus`) | 336 | 0.7% |
-| 社媒账号 (`social-media-account`) | 312 | 0.7% |
-| TikTok 账号 (`tiktok-account`) | 292 | 0.6% |
-| Dreamina / 即梦 (`dreamina-account`) | 287 | 0.6% |
-| Claude / Anthropic 接码 (`sms-claude`) | 275 | 0.6% |
-| Claude Pro 成品号 (`claude-pro-account`) | 263 | 0.6% |
-| Google AI Ultra 5x (`gemini-ultra-5x`) | 243 | 0.5% |
-| Gemini Plus (`gemini-plus`) | 207 | 0.4% |
-| ChatGPT Pro 100刀档 成品号 (`chatgpt-pro-100-account`) | 193 | 0.4% |
-| Cursor 接码 (`sms-cursor`) | 182 | 0.4% |
-| Kiro Pro / 额度号 (`kiro-pro`) | 172 | 0.4% |
-| X / 推特账号 (`x-account`) | 171 | 0.4% |
-| Meta / Muse 接码 (`sms-muse`) | 162 | 0.3% |
-| Claude Max 20x 成品号 (`claude-max-20x-account`) | 134 | 0.3% |
-| ChatGPT Pro 200刀档 成品号 (`chatgpt-pro-200-account`) | 130 | 0.3% |
-| Cursor 账号 (`cursor-account`) | 127 | 0.3% |
-| Claude Max 5x 成品号 (`claude-max-5x-account`) | 104 | 0.2% |
-| Cursor Ultra (`cursor-ultra`) | 104 | 0.2% |
+| ChatGPT Plus 试用订阅 (`chatgpt-plus`) | 7587 | 16.9% |
+| OpenAI / ChatGPT 接码 (`sms-openai`) | 2601 | 5.8% |
+| 其他商品 (`other-product`) | 2450 | 5.5% |
+| ChatGPT Pro 100刀档 代充 (`chatgpt-pro-100`) | 2275 | 5.1% |
+| Gmail / Google 邮箱 (`gmail-account`) | 1932 | 4.3% |
+| ChatGPT 普号 (`chatgpt-free-account`) | 1828 | 4.1% |
+| ChatGPT Pro 200刀档 代充 (`chatgpt-pro-200`) | 1748 | 3.9% |
+| Outlook / Hotmail 邮箱 (`outlook-account`) | 1694 | 3.8% |
+| ChatGPT Plus 正价代充 (`chatgpt-plus-recharge`) | 1414 | 3.2% |
+| ChatGPT Team 5x (`chatgpt-team-5x`) | 1131 | 2.5% |
+| ChatGPT Team 10x (`chatgpt-team-10x`) | 1012 | 2.3% |
+| Codex 额度充值 (`codex-credits`) | 965 | 2.2% |
+| Gemini Pro 充值/开通 (`gemini-pro`) | 941 | 2.1% |
+| ChatGPT Team (`chatgpt-team`) | 903 | 2.0% |
+| Muse AI 账号 (`muse-ai-account`) | 901 | 2.0% |
+| 中转站 / API 网关 (`api-gateway`) | 853 | 1.9% |
+| Claude 普号 / 兑换号 (`claude-account`) | 844 | 1.9% |
+| Gemini Pro 成品号 (`gemini-pro-account`) | 817 | 1.8% |
+| ChatGPT Pro 500刀档 代充 (`chatgpt-pro-500`) | 743 | 1.7% |
+| Grok Super (`grok-super`) | 717 | 1.6% |
+| 通用接码 (`sms-generic`) | 528 | 1.2% |
+| Claude Pro 代充 (`claude-pro`) | 502 | 1.1% |
+| Grok Ultra (`grok-ultra`) | 502 | 1.1% |
+| ChatGPT Go (`chatgpt-go`) | 491 | 1.1% |
+| Telegram 账号 (`telegram-account`) | 464 | 1.0% |
+| iCloud 邮箱 (`icloud-email`) | 431 | 1.0% |
+| Apple ID / 苹果账号 (`apple-id-account`) | 423 | 0.9% |
+| Grok Premium (`grok-premium`) | 422 | 0.9% |
+| Gemini 账号 (`gemini-account`) | 420 | 0.9% |
+| Grok 普号 / 体验号 (`grok-account`) | 409 | 0.9% |
+| 其他邮箱 (`email-account`) | 398 | 0.9% |
+| Claude Max 5x 代充 (`claude-max-5x`) | 374 | 0.8% |
+| 真人 / KYC 验证 (`kyc`) | 352 | 0.8% |
+| Google AI Ultra 20x (`gemini-ultra-20x`) | 345 | 0.8% |
+| 虚拟卡 (`virtual-card`) | 344 | 0.8% |
+| Claude Max 20x 代充 (`claude-max-20x`) | 341 | 0.8% |
+| Google / Gemini 接码 (`sms-google`) | 341 | 0.8% |
+| Grok Plus (`grok-plus`) | 330 | 0.7% |
+| 社媒账号 (`social-media-account`) | 290 | 0.6% |
+| TikTok 账号 (`tiktok-account`) | 289 | 0.6% |
+| Dreamina / 即梦 (`dreamina-account`) | 285 | 0.6% |
+| Claude / Anthropic 接码 (`sms-claude`) | 274 | 0.6% |
+| Claude Pro 成品号 (`claude-pro-account`) | 260 | 0.6% |
+| Google AI Ultra 5x (`gemini-ultra-5x`) | 237 | 0.5% |
+| Gemini Plus (`gemini-plus`) | 207 | 0.5% |
+| ChatGPT Pro 100刀档 成品号 (`chatgpt-pro-100-account`) | 186 | 0.4% |
+| Cursor 接码 (`sms-cursor`) | 181 | 0.4% |
+| Kiro Pro / 额度号 (`kiro-pro`) | 165 | 0.4% |
+| Meta / Muse 接码 (`sms-muse`) | 160 | 0.4% |
+| X / 推特账号 (`x-account`) | 157 | 0.3% |
+| Claude Max 20x 成品号 (`claude-max-20x-account`) | 129 | 0.3% |
+| ChatGPT Pro 200刀档 成品号 (`chatgpt-pro-200-account`) | 128 | 0.3% |
+| Cursor 账号 (`cursor-account`) | 126 | 0.3% |
+| Cursor Ultra (`cursor-ultra`) | 103 | 0.2% |
+| Claude Max 5x 成品号 (`claude-max-5x-account`) | 101 | 0.2% |
 | Instagram / Threads 接码 (`sms-instagram`) | 96 | 0.2% |
-| Notion 商业版 (`notion-business`) | 87 | 0.2% |
+| Notion 商业版 (`notion-business`) | 83 | 0.2% |
 | Kiro 普号 / Free (`kiro-account`) | 76 | 0.2% |
-| PayPal 接码 (`sms-paypal`) | 71 | 0.2% |
+| PayPal 接码 (`sms-paypal`) | 67 | 0.1% |
 | 教育邮箱 (`education-email`) | 65 | 0.1% |
-| Cursor Pro (`cursor-pro`) | 62 | 0.1% |
-| Cursor Free (`cursor-free`) | 57 | 0.1% |
-| 提链卡密 (`topup-card`) | 57 | 0.1% |
-| ChatGPT Pro 500刀档 成品号 (`chatgpt-pro-500-account`) | 56 | 0.1% |
-| Codex / ChatGPT 周边与自助服务 (`codex-service`) | 42 | 0.1% |
-| Telegram Premium / Pro 会员 (`telegram-premium`) | 40 | 0.1% |
-| Perplexity 账号 (`perplexity-account`) | 32 | 0.1% |
+| Cursor Pro (`cursor-pro`) | 60 | 0.1% |
+| ChatGPT Pro 500刀档 成品号 (`chatgpt-pro-500-account`) | 55 | 0.1% |
+| Cursor Free (`cursor-free`) | 53 | 0.1% |
+| 提链卡密 (`topup-card`) | 48 | 0.1% |
+| Telegram Premium / Pro 会员 (`telegram-premium`) | 34 | 0.1% |
 | Suno 账号 (`suno-account`) | 28 | 0.1% |
-| Claude Team Standard (`claude-team-standard`) | 27 | 0.1% |
-| X Premium / 推特会员 (`x-premium`) | 27 | 0.1% |
-| 多邻国 Super 会员 (`duolingo-super`) | 23 | 0.0% |
+| X Premium / 推特会员 (`x-premium`) | 25 | 0.1% |
+| Perplexity 账号 (`perplexity-account`) | 25 | 0.1% |
+| Claude Team Standard (`claude-team-standard`) | 24 | 0.1% |
 | 礼品卡 (`gift-card`) | 22 | 0.0% |
+| 多邻国 Super 会员 (`duolingo-super`) | 22 | 0.0% |
 | Copilot (`copilot`) | 10 | 0.0% |
+| Codex / ChatGPT 周边与自助服务 (`codex-service`) | 6 | 0.0% |
 | Claude Team Premium (`claude-team-premium`) | 5 | 0.0% |
 | Claude KYC 认证 (`claude-kyc`) | 5 | 0.0% |
 | Windsurf 账号 (`windsurf-account`) | 5 | 0.0% |
