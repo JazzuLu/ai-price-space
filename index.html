@@ -57,6 +57,8 @@
       input:checked + .switch { background: hsl(var(--primary)); }
       input:checked + .switch::after { transform: translateX(16px); }
       input:focus-visible + .switch { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+      .switch-input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; appearance: none; -webkit-appearance: none; background: transparent; border: 0; border-radius: inherit; cursor: pointer; }
+      .switch-input:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
       @keyframes spin { to { transform: rotate(360deg); } }
       .spinning svg { animation: spin .7s linear infinite; }
       .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
@@ -91,6 +93,7 @@
       }
       .search-clear:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
       .stock-pill {
+        position: relative;
         display: inline-flex; align-items: center; gap: 7px; height: 40px; padding: 0 12px;
         border: 1px solid hsl(var(--border)); border-radius: 9999px;
         background: hsl(var(--card)); color: hsl(var(--foreground));
@@ -101,7 +104,7 @@
       /* 一级大类 Tab 条 */
       .tab-strip {
         display: flex; align-items: center; gap: 6px;
-        margin: 10px -1rem 0; padding: 0 1rem 2px;
+        margin: 10px 0 0; padding: 0 0 2px;
         overflow-x: auto; flex-wrap: nowrap;
       }
       @media (min-width: 640px) { .tab-strip { margin: 10px 0 0; padding: 0 0 2px; } }
@@ -172,7 +175,7 @@
       .cat-section-more:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
 
       /* 二级标准商品卡片 */
-      .prod-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+      .prod-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
       @media (min-width: 640px) { .prod-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
       @media (min-width: 1024px) { .prod-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
       @media (min-width: 1280px) { .prod-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
@@ -355,8 +358,8 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
               <span id="btn-refresh-label">刷新数据</span>
             </button>
-            <label class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border bg-card text-xs sm:text-sm cursor-pointer select-none shadow-sm">
-              <input id="auto-refresh" type="checkbox" class="sr-only" aria-label="自动刷新（每 30 分钟）" aria-checked="false" />
+            <label class="relative inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border bg-card text-xs sm:text-sm cursor-pointer select-none shadow-sm">
+              <input id="auto-refresh" type="checkbox" class="switch-input" aria-label="自动刷新（每 30 分钟）" aria-checked="false" />
               <span class="switch" aria-hidden="true"></span>
               <span class="hidden sm:inline">自动刷新 · 30 分钟</span>
               <span class="sm:hidden">自动</span>
@@ -381,7 +384,7 @@
             <button id="q-clear" type="button" class="search-clear" aria-label="清空搜索" hidden>×</button>
           </div>
           <label class="stock-pill">
-            <input id="in-stock" type="checkbox" class="sr-only" aria-label="只看有货" aria-checked="false" />
+            <input id="in-stock" type="checkbox" class="switch-input" aria-label="只看有货" aria-checked="false" />
             <span class="switch" aria-hidden="true"></span>
             <span><span class="hidden sm:inline">只看</span>有货</span>
           </label>
@@ -1661,11 +1664,26 @@
           els.btnRefresh.classList.toggle('spinning', on);
           els.btnRefreshLabel.textContent = on ? '刷新中…' : '刷新数据';
         }
-        function fetchJson(url, cacheMode) {
+        function fetchJsonOnce(url, cacheMode) {
           return fetch(url, { cache: cacheMode || 'no-store' }).then(function (res) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.json();
           });
+        }
+        function fetchJson(url, cacheMode) {
+          // 网络层失败（如 Safari/WKWebView 的 TypeError: Load failed）自动重试，
+          // 避免一次抖动就整页报错；4xx 是确定性错误不重试，5xx 与网络错误重试。
+          var MAX_ATTEMPTS = 3;
+          function attempt(n) {
+            return fetchJsonOnce(url, cacheMode).catch(function (err) {
+              var msg = (err && err.message) || '';
+              var httpMatch = /^HTTP (\d+)$/.exec(msg);
+              var retryable = !httpMatch || Number(httpMatch[1]) >= 500;
+              if (!retryable || n >= MAX_ATTEMPTS) throw err;
+              return new Promise(function (r) { setTimeout(r, 700 * n); }).then(function () { return attempt(n + 1); });
+            });
+          }
+          return attempt(1);
         }
         function decodeRowsRange(dicts, rows, from, to, out) {
           var shops = dicts.shops || [], platforms = dicts.platforms || [], sources = dicts.sources || [];
@@ -1712,11 +1730,12 @@
           var total = manifest.total != null ? manifest.total : (meta.total || 0);
           paintStats(meta);
           var acc = [];
-          var restFetches = urls.slice(1).map(function (u) { return fetchJson(u, 'no-cache'); });
-          restFetches.forEach(function (p) { p.catch(function () {}); });
+          // 分片改为顺序加载：并发拉取多个 2MB+ 文件在手机 WebView 上容易
+          // 触发网络失败（Load failed），顺序拉取慢一点但稳得多，
+          // 且第一片到达后即可先渲染浏览。
           for (var ci = 0; ci < urls.length; ci++) {
             var rows;
-            try { rows = ci === 0 ? await fetchJson(urls[0], 'no-cache') : await restFetches[ci - 1]; }
+            try { rows = await fetchJson(urls[ci], 'no-cache'); }
             catch (err) {
               if (ci === 0) throw err;
               if (seq !== loadSeq) return;
@@ -1751,6 +1770,8 @@
           var seq = ++loadSeq;
           try {
             var data;
+            // GitHub Pages 布局：清单在根目录 data.json；空间构建里清单在 assets/ 下，
+            // 那边用 assets/data.json 优先、根路径兜底。两边顺序不同是故意的，同步时别统一。
             try { data = await fetchJson('data.json'); }
             catch (e1) { data = await fetchJson('assets/data.json'); }
             if (seq !== loadSeq) return;
