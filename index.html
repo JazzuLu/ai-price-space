@@ -299,18 +299,45 @@
       .drawer-btn-pri { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
 
       /* 移动端紧凑排版 */
-      .stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-      @media (min-width: 1024px) { .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 14px; } }
-      .stat-card { border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
-      .stat-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 600; line-height: 1.2; }
-      .stat-lbl { font-size: 11.5px; color: hsl(var(--muted-foreground)); margin-top: 3px; }
+      .stats-grid { display: none; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
+      @media (min-width: 640px) { .stats-grid { display: grid; } }
+      .stat-card { border: 1px solid hsl(var(--border)); border-radius: var(--radius); background: hsl(var(--card)); padding: 8px 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+      .stat-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 600; line-height: 1.2; }
+      .stat-lbl { font-size: 11px; color: hsl(var(--muted-foreground)); margin-top: 2px; }
+      .stats-inline {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px;
+        margin-top: 6px; font-size: 12px; color: hsl(var(--muted-foreground));
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums;
+      }
+      @media (min-width: 640px) { .stats-inline { display: none; } }
+
+      /* 官方定价参考锚点条 & 异常低价提示徽章 */
+      .official-ref {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+        margin-top: 10px; padding: 8px 12px;
+        border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+        background: hsl(var(--secondary) / .55); font-size: 12.5px; color: hsl(var(--muted-foreground));
+      }
+      .official-ref strong { color: hsl(var(--foreground)); font-weight: 600; }
+      .median-pill {
+        display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 9999px;
+        background: hsl(var(--secondary)); color: hsl(var(--muted-foreground));
+        font-size: 11px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums;
+      }
+      .risk-tag {
+        display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 5px;
+        background: rgb(255 251 235); color: rgb(146 64 14);
+        font-size: 10.5px; font-weight: 500; white-space: nowrap;
+      }
+      @media (prefers-color-scheme: dark) {
+        .risk-tag { background: rgb(69 26 3); color: rgb(252 211 77); }
+      }
+      .shop-group.is-demoted { opacity: .72; background: hsl(var(--secondary) / .28); }
 
       @media (max-width: 639.98px) {
-        header.site-header { padding-top: 14px; padding-bottom: 6px; }
-        header.site-header h1 { font-size: 20px; }
-        header.site-header .site-desc { font-size: 12px; line-height: 1.45; margin-top: 4px; }
-        .stat-card { padding: 7px 10px; }
-        .stat-val { font-size: 16px; }
+        header.site-header { padding-top: 10px; padding-bottom: 4px; }
+        header.site-header h1 { font-size: 19px; }
+        header.site-header .site-desc { display: none; }
         .search-input { height: 38px; font-size: 13.5px; }
         .stock-pill { height: 38px; padding: 0 10px; font-size: 12.5px; }
         .shop-main { grid-template-columns: 1fr; gap: 10px; padding: 12px 14px; }
@@ -367,6 +394,7 @@
           </div>
         </div>
         <p id="refresh-note" class="text-xs text-muted-foreground mt-1.5" hidden></p>
+        <div id="stats-inline" class="stats-inline">加载中…</div>
         <div class="stats-grid">
           <div class="stat-card"><div class="stat-val" id="stat-items">—</div><div class="stat-lbl">报价总数</div></div>
           <div class="stat-card"><div class="stat-val" id="stat-shops">—</div><div class="stat-lbl">覆盖店铺</div></div>
@@ -441,7 +469,7 @@
           <p id="lowest-line" class="text-xs text-muted-foreground mt-2" hidden></p>
           <div class="flex flex-wrap items-baseline justify-between gap-2 mt-2 mb-2.5">
             <p class="text-[13px] text-muted-foreground" id="result-line"></p>
-            <p class="text-xs text-muted-foreground">最低价已排除拼车、镜像、纯网页号与垃圾标题</p>
+            <p class="text-xs text-muted-foreground">最低价已过滤拼车、镜像、网页号、咨询占位及疑似定金异常低价</p>
           </div>
 
           <div id="product-sections"></div>
@@ -475,6 +503,7 @@
               </div>
               <p id="detail-meta" class="text-xs sm:text-sm text-muted-foreground"></p>
             </div>
+            <div id="detail-official-ref" class="official-ref" hidden></div>
           </div>
 
           <!-- 详情页轻量筛选条：平台胶囊 + 快捷开关 + 排序 + 单层更多筛选（零下拉框） -->
@@ -483,7 +512,7 @@
             <div class="detail-toolbar-row">
               <div class="pill-strip no-scrollbar">
                 <button id="toggle-warranty" type="button" class="pill-btn" aria-pressed="false">只看质保</button>
-                <button id="toggle-clean" type="button" class="pill-btn" aria-pressed="false">排除拼车/镜像</button>
+                <button id="toggle-clean" type="button" class="pill-btn" aria-pressed="false">仅看正常主价</button>
                 <button id="detail-filter-btn" type="button" class="filter-trigger-btn">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
                   <span>价格 / 店铺</span>
@@ -728,6 +757,53 @@
         var onlyWarranty = false;
         var excludeRisky = false;
         var allSources = [];
+        var productPriceStats = {}; // slug -> { median, floor, count }
+
+        // 核心订阅商品官方定价参考锚点（按 1 USD ≈ 7.25 CNY 估算，仅供比价参照）
+        var OFFICIAL_PRICES = {
+          'chatgpt-go':              { label: '官方 $8/月', cny: 58 },
+          'chatgpt-plus':            { label: '官方 $20/月', cny: 145 },
+          'chatgpt-plus-recharge':   { label: '官方 $20/月', cny: 145 },
+          'chatgpt-team':            { label: '官方 $25–$30/席/月', cny: 181 },
+          'chatgpt-pro-100':         { label: '官方 Pro $100/月档', cny: 725 },
+          'chatgpt-pro-100-account': { label: '官方 Pro $100/月档', cny: 725 },
+          'chatgpt-pro-200':         { label: '官方 Pro $200/月', cny: 1450 },
+          'chatgpt-pro-200-account': { label: '官方 Pro $200/月', cny: 1450 },
+          'claude-pro':              { label: '官方 $20/月', cny: 145 },
+          'claude-pro-account':      { label: '官方 $20/月', cny: 145 },
+          'claude-max-5x':           { label: '官方 Max 5x $100/月', cny: 725 },
+          'claude-max-5x-account':   { label: '官方 Max 5x $100/月', cny: 725 },
+          'claude-max-20x':          { label: '官方 Max 20x $200/月', cny: 1450 },
+          'claude-max-20x-account':  { label: '官方 Max 20x $200/月', cny: 1450 },
+          'claude-team-standard':    { label: '官方 $25–$30/席/月', cny: 181 },
+          'gemini-plus':             { label: '官方 Google AI Plus', cny: 58 },
+          'gemini-pro':              { label: '官方 AI Pro $19.99/月', cny: 145 },
+          'gemini-pro-account':      { label: '官方 AI Pro $19.99/月', cny: 145 },
+          'gemini-ultra-20x':        { label: '官方 AI Ultra $249.99/月', cny: 1812 },
+          'grok-super':              { label: '官方 SuperGrok $30/月', cny: 218 },
+          'grok-ultra':              { label: '官方 SuperGrok Heavy $300/月', cny: 2175 },
+          'cursor-pro':              { label: '官方 Cursor Pro $20/月', cny: 145 },
+          'cursor-ultra':            { label: '官方 Cursor Ultra $200/月', cny: 1450 },
+          'copilot':                 { label: '官方 Copilot $10/月', cny: 73 },
+          'telegram-premium':        { label: '官方约 $4.99/月', cny: 36 },
+          'x-premium':               { label: '官方 $8/月', cny: 58 }
+        };
+
+        var PAID_SUB_SLUGS = {
+          'chatgpt-plus': 1, 'chatgpt-plus-recharge': 1, 'chatgpt-go': 1,
+          'chatgpt-team': 1, 'chatgpt-team-5x': 1, 'chatgpt-team-10x': 1,
+          'chatgpt-pro-100': 1, 'chatgpt-pro-100-account': 1,
+          'chatgpt-pro-200': 1, 'chatgpt-pro-200-account': 1,
+          'chatgpt-pro-500': 1, 'chatgpt-pro-500-account': 1,
+          'claude-pro': 1, 'claude-pro-account': 1,
+          'claude-max-5x': 1, 'claude-max-5x-account': 1,
+          'claude-max-20x': 1, 'claude-max-20x-account': 1,
+          'claude-team-standard': 1, 'claude-team-premium': 1,
+          'gemini-plus': 1, 'gemini-pro': 1, 'gemini-pro-account': 1,
+          'gemini-ultra-5x': 1, 'gemini-ultra-20x': 1,
+          'grok-plus': 1, 'grok-premium': 1, 'grok-super': 1, 'grok-ultra': 1,
+          'cursor-pro': 1, 'cursor-ultra': 1, 'kiro-pro': 1
+        };
 
         var autoTimer = null;
         var loading = false;
@@ -736,6 +812,7 @@
         var $ = function (id) { return document.getElementById(id); };
         var els = {
           q: $('q'), qClear: $('q-clear'), inStock: $('in-stock'),
+          statsInline: $('stats-inline'),
           primaryTabs: $('primary-tabs'), subPills: $('sub-pills'),
           activeChips: $('active-chips'),
           loading: $('loading'), catalogView: $('catalog-view'), detailView: $('detail-view'),
@@ -748,6 +825,7 @@
           allToolbar: $('all-toolbar'), allPlatformPills: $('all-platform-pills'), allSortGroup: $('all-sort-group'),
           detailBack: $('detail-back'), detailModeShop: $('detail-mode-shop'), detailModeFlat: $('detail-mode-flat'),
           detailBadges: $('detail-badges'), detailTitle: $('detail-title'), detailSub: $('detail-sub'), detailMeta: $('detail-meta'),
+          detailOfficialRef: $('detail-official-ref'),
           detailPlatformPills: $('detail-platform-pills'), detailSortGroup: $('detail-sort-group'),
           toggleWarranty: $('toggle-warranty'), toggleClean: $('toggle-clean'),
           detailFilterBtn: $('detail-filter-btn'), detailFilterBadge: $('detail-filter-badge'),
@@ -799,20 +877,71 @@
         function titleFlags(title) {
           var t = title || '';
           return {
-            shared: /拼车|合租|车位/.test(t),
+            shared: /拼车|合租|车位|[二三四五六七八九十\d]人车|头车|二车|尾车|家庭组/.test(t),
             mirror: /镜像/.test(t),
             web: /网页号|仅网页|纯网页/.test(t)
           };
         }
-        var JUNK_BASE_RE = /教程|教学|攻略|咨询客服|乞讨|不发货|无法登陆|无法登录|封号的|死号的|已封号/;
+        var JUNK_BASE_RE = /教程|教学|攻略|咨询客服|业务咨询|联系客服|咨询拍|乞讨|不发货|无法登陆|无法登录|封号的|死号的|已封号|下单后补差价|补差价找客服|福利鸡蛋|图片兑换码|钻石.*试用装|试用装|专拍链接|定金/;
         var DIFF_JUNK_RE = /(?:^|[\s|/【\[（(·])(?:升级)?补差价(?:专用|链接|专拍)?(?:$|[\s|/】\]）)·])/;
         var REAL_SUB_RE = /plus|pro|team|go|max|ultra|月卡|季卡|年卡|成品|代充|直充|续费/i;
+        var FREE_BAIT_RE = /普号|白号|免费号|资格号|试用资格|半价资格|g\s*free|gpt-free|free\s*号/i;
+        var FREE_PAID_RE = /成品|会员|订阅|直充|代充|月卡|季卡|年卡|一月|一个月/;
+        var FREE_NEG_RE = /不是成品|不含plus|不含\s*plus|不是plus|充pro\s*max|可充plus|可开plus/i;
         var NO_WARRANTY_RE = /无质保|不质保|不包质保/;
         function isJunkTitle(title) {
           var t = title || '';
           if (JUNK_BASE_RE.test(t)) return true;
           if (DIFF_JUNK_RE.test(t) && !REAL_SUB_RE.test(t)) return true;
           return false;
+        }
+        function isFreeAccountBait(slug, title) {
+          if (!PAID_SUB_SLUGS[slug]) return false;
+          var t = title || '';
+          if (FREE_NEG_RE.test(t)) return true;
+          return FREE_BAIT_RE.test(t) && !FREE_PAID_RE.test(t);
+        }
+        function buildProductPriceStats() {
+          var buckets = {};
+          items.forEach(function (r) {
+            if (!r.product || !(r.stock > 0)) return;
+            if (isJunkTitle(r.title) || isFreeAccountBait(r.product, r.title)) return;
+            var fl = titleFlags(r.title);
+            if (fl.shared || fl.mirror || fl.web) return;
+            if (!buckets[r.product]) buckets[r.product] = [];
+            buckets[r.product].push(r.price);
+          });
+          var stats = {};
+          Object.keys(buckets).forEach(function (slug) {
+            var arr = buckets[slug].sort(function (a, b) { return a - b; });
+            var n = arr.length;
+            var median = arr[Math.floor(n / 2)];
+            // 样本 >= 5 且主流中位价 >= 10 元时，低于中位价 20% 判定为疑似定金/引流异常低价
+            var floor = (n >= 5 && median >= 10) ? Math.max(2, Math.round(median * 0.2 * 100) / 100) : 0;
+            stats[slug] = { median: median, floor: floor, count: n };
+          });
+          productPriceStats = stats;
+        }
+        function isOutlierOffer(r) {
+          if (!r || !r.product) return false;
+          var st = productPriceStats[r.product];
+          return !!(st && st.floor > 0 && r.price < st.floor);
+        }
+        function isNormalOffer(r) {
+          if (!r) return false;
+          if (isJunkTitle(r.title) || isFreeAccountBait(r.product, r.title) || isOutlierOffer(r)) return false;
+          var fl = titleFlags(r.title);
+          return !fl.shared && !fl.mirror && !fl.web;
+        }
+        function offerRiskTagsHtml(r) {
+          var tags = [];
+          if (isJunkTitle(r.title) || isFreeAccountBait(r.product, r.title)) tags.push('非主商品/占位');
+          else if (isOutlierOffer(r)) tags.push('疑似定金/异常低价');
+          var fl = titleFlags(r.title);
+          if (fl.shared) tags.push('拼车');
+          if (fl.mirror) tags.push('镜像');
+          if (fl.web) tags.push('网页号');
+          return tags.map(function (t) { return '<span class="risk-tag">' + esc(t) + '</span>'; }).join('');
         }
         function hasWarranty(title) {
           var t = title || '';
@@ -866,8 +995,18 @@
           return tb - ta;
         }
         function compareDetail(a, b) {
-          function rank(r) { return r.stock > 0 ? 0 : (r.stock === 0 ? 2 : 1); }
-          var d = rank(a) - rank(b);
+          function stockRank(r) { return r.stock > 0 ? 0 : (r.stock === 0 ? 2 : 1); }
+          var d = stockRank(a) - stockRank(b);
+          if (d) return d;
+          // 与首页卡片主价口径完全一致：杂项/空号引流/疑似定金异常低价沉底，其次拼车/镜像/网页号沉底
+          function qualityRank(r) {
+            if (isJunkTitle(r.title) || isFreeAccountBait(r.product, r.title)) return 3;
+            if (isOutlierOffer(r)) return 2;
+            var fl = titleFlags(r.title);
+            if (fl.shared || fl.mirror || fl.web) return 1;
+            return 0;
+          }
+          d = qualityRank(a) - qualityRank(b);
           if (d) return d;
           d = a.price - b.price;
           if (d) return d;
@@ -1071,7 +1210,7 @@
               (els.drawerPMax.value !== '' ? '¥' + els.drawerPMax.value : '');
             add('price', '价格', pStr);
             if (onlyWarranty) add('warranty', '质保', '只看质保');
-            if (excludeRisky) add('clean', '过滤', '排除拼车/镜像');
+            if (excludeRisky) add('clean', '过滤', '仅看正常主价');
           }
           els.activeChips.innerHTML = chips.join('') + (chips.length ? '<button type="button" class="clear-all-btn" data-clear="all">全部清除</button>' : '');
           els.activeChips.hidden = !chips.length;
@@ -1118,7 +1257,7 @@
                 vendor: r.vendor || '其他',
                 category: r.category || '',
                 count: 0, inStock: 0, outStock: 0, unknownStock: 0,
-                shops: {}, best: null, excluded: null, warranty: null, latest: '', latestT: 0
+                shops: {}, best: null, excluded: null, outlier: null, warranty: null, latest: '', latestT: 0
               };
             }
             p.count++;
@@ -1130,11 +1269,15 @@
               var ot = new Date(r.observed_at).getTime();
               if (!isNaN(ot) && ot > p.latestT) { p.latestT = ot; p.latest = r.observed_at; }
             }
-            if (r.stock > 0 && !isJunkTitle(r.title)) {
+            if (r.stock > 0 && !isJunkTitle(r.title) && !isFreeAccountBait(r.product, r.title)) {
               var f = titleFlags(r.title);
               if (!f.shared && !f.mirror && !f.web) {
-                if (!p.best || r.price < p.best.price) p.best = r;
-                if (hasWarranty(r.title) && (!p.warranty || r.price < p.warranty.price)) p.warranty = r;
+                if (isOutlierOffer(r)) {
+                  if (!p.outlier || r.price < p.outlier.price) p.outlier = r;
+                } else {
+                  if (!p.best || r.price < p.best.price) p.best = r;
+                  if (hasWarranty(r.title) && (!p.warranty || r.price < p.warranty.price)) p.warranty = r;
+                }
               } else if (!p.excluded || r.price < p.excluded.price) {
                 p.excluded = r;
               }
@@ -1143,6 +1286,8 @@
           var arr = Object.keys(map).map(function (k) {
             var p = map[k];
             p.shopCount = Object.keys(p.shops).length;
+            var st = productPriceStats[p.slug];
+            p.median = st ? st.median : null;
             return p;
           });
           if (prodSort === 'price') {
@@ -1165,20 +1310,28 @@
         }
 
         function renderProductCardHtml(p) {
-          var main = p.best || p.excluded;
+          var main = p.best || p.excluded || p.outlier;
           var priceLabel = '';
           if (main) {
-            priceLabel = p.best ? '有货起' : (function () {
+            if (p.best) priceLabel = '有货起';
+            else if (p.excluded) {
               var f = titleFlags(p.excluded.title);
-              return f.shared ? '拼车价' : (f.mirror ? '镜像价' : '网页价');
-            })();
+              priceLabel = f.shared ? '拼车价' : (f.mirror ? '镜像价' : '网页价');
+            } else {
+              priceLabel = '异常低价';
+            }
           }
           var note = '';
           if (p.best && p.excluded && p.excluded.price < p.best.price) {
             var f2 = titleFlags(p.excluded.title);
             var lbl2 = f2.shared ? '拼车价' : (f2.mirror ? '镜像价' : '网页价');
             note = '<p class="text-[11.5px] text-muted-foreground">另有' + lbl2 + ' <span class="font-mono tabular">¥' + fmtPrice(p.excluded.price) + '</span> 起</p>';
+          } else if (p.best && p.outlier && p.outlier.price < p.best.price) {
+            note = '<p class="text-[11.5px] text-muted-foreground">已过滤疑似定金/引流低价 ¥' + fmtPrice(p.outlier.price) + '</p>';
           }
+          var medianHtml = (p.best && p.median != null && p.median > p.best.price * 1.05)
+            ? '<span class="median-pill" title="该商品有货报价中位价">主流 ¥' + fmtPrice(p.median) + '</span>'
+            : '';
           var badgeText = p.tab === '其他' ? (p.vendor !== '其他' ? p.vendor : p.sub) : p.sub;
           var warrantyHtml = p.warranty
             ? '<div class="flex items-center justify-between gap-2 w-full rounded-md border border-emerald-200 bg-emerald-50 dark:border-emerald-900 dark:bg-emerald-950 px-2.5 py-1.5"><span class="text-xs font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">质保最低</span><span class="font-mono tabular text-[19px] leading-none font-bold tracking-tight text-emerald-700 dark:text-emerald-300">¥' + fmtPrice(p.warranty.price) + '</span></div>'
@@ -1194,7 +1347,7 @@
             '</div>' +
             '<div class="flex items-baseline gap-1.5 w-full flex-wrap">' +
             (main
-              ? '<span class="font-mono tabular text-2xl font-bold tracking-tight"><span class="text-sm font-semibold">¥</span>' + fmtPrice(main.price) + '</span><span class="text-xs text-muted-foreground">' + priceLabel + '</span>'
+              ? '<span class="font-mono tabular text-2xl font-bold tracking-tight"><span class="text-sm font-semibold">¥</span>' + fmtPrice(main.price) + '</span><span class="text-xs text-muted-foreground">' + priceLabel + '</span>' + medianHtml
               : '<span class="text-sm text-muted-foreground">暂无有货报价</span>') +
             '<span class="prod-enter">看店铺 ›</span>' +
             '</div>' +
@@ -1381,7 +1534,7 @@
             var rBuyUrl = r.item_url || r.shop_url || '';
             var rExitAttrs = ' data-exit data-title="' + esc(r.title) + '" data-platform="' + esc(r.platform) + '" data-price="' + (r.price != null ? r.price : '') + '"';
             html += '<div class="shop-spec-row">' +
-              '<div class="shop-spec-badges flex items-center gap-1.5 flex-wrap">' + stockHtml(r.stock) +
+              '<div class="shop-spec-badges flex items-center gap-1.5 flex-wrap">' + stockHtml(r.stock) + offerRiskTagsHtml(r) +
               '<span class="inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground">' + esc(r.source) + '</span></div>' +
               '<div class="shop-spec-title">' + esc(r.title) +
               '<div class="shop-spec-meta">' +
@@ -1423,16 +1576,43 @@
             if (!isNaN(min) && r.price < min) return false;
             if (!isNaN(max) && r.price > max) return false;
             if (onlyWarranty && !hasWarranty(r.title)) return false;
-            if (excludeRisky) {
-              if (isJunkTitle(r.title)) return false;
-              var fl = titleFlags(r.title);
-              if (fl.shared || fl.mirror || fl.web) return false;
-            }
+            if (excludeRisky && !isNormalOffer(r)) return false;
             return true;
           });
           renderPlatformPills(els.detailPlatformPills, baseRows);
           var rows = activePlatform ? baseRows.filter(function (r) { return r.platform === activePlatform; }) : baseRows;
           els.drawerDone.textContent = '查看 ' + rows.length.toLocaleString('zh-CN') + ' 条报价';
+
+          // 官方定价参考锚点 + 主流中位价
+          var off = OFFICIAL_PRICES[detailSlug];
+          var st = productPriceStats[detailSlug];
+          var normalBest = null;
+          rows.forEach(function (r) {
+            if (r.stock > 0 && isNormalOffer(r) && (!normalBest || r.price < normalBest.price)) normalBest = r;
+          });
+          if (off || (st && st.median != null)) {
+            var refParts = [];
+            if (off) {
+              refParts.push('<span>官方参考：<strong>' + esc(off.label) + '</strong>（≈¥' + off.cny + '）</span>');
+            }
+            if (normalBest) {
+              var ratioHtml = '';
+              if (off && off.cny > 0) {
+                var ratio = normalBest.price / off.cny;
+                if (ratio <= 0.98) ratioHtml = '（约 ' + (Math.round(ratio * 100) / 10) + ' 折）';
+                else if (ratio >= 1.03) ratioHtml = '（较官价 +' + Math.round((ratio - 1) * 100) + '%）';
+              }
+              refParts.push('<span>正常有货最低：<strong>¥' + fmtPrice(normalBest.price) + '</strong>' + ratioHtml + '</span>');
+            }
+            if (st && st.median != null) {
+              refParts.push('<span>主流中位价：<strong>¥' + fmtPrice(st.median) + '</strong></span>');
+            }
+            els.detailOfficialRef.innerHTML = refParts.join('<span aria-hidden="true">·</span>');
+            els.detailOfficialRef.hidden = false;
+          } else {
+            els.detailOfficialRef.hidden = true;
+            els.detailOfficialRef.innerHTML = '';
+          }
 
           var badgeHtml = '<button type="button" data-jump-tab="' + esc(pMeta.tab) + '" class="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground hover:bg-accent">' + esc(pMeta.tab) + '</button>';
           if (pMeta.sub && pMeta.sub !== pMeta.tab) {
@@ -1506,13 +1686,16 @@
                 : '<span class="shop-main-name break-words" title="' + esc(b.shop_name) + '">' + esc(b.shop_name) + '</span>';
               var extraCount = g.offers.length - 1;
               var isExpanded = !!expandedShops[g.key];
-              shtml += '<div class="shop-group" data-shop-group="' + esc(g.key) + '">' +
+              var riskHtml = offerRiskTagsHtml(b);
+              var isDemoted = !isNormalOffer(b);
+              shtml += '<div class="shop-group' + (isDemoted ? ' is-demoted' : '') + '" data-shop-group="' + esc(g.key) + '">' +
                 '<div class="shop-main">' +
                 '<div class="shop-main-info">' +
                 '<div class="shop-main-top">' +
                 '<span class="inline-flex items-center rounded-md bg-primary text-primary-foreground px-1.5 py-0.5 font-mono text-[10.5px] font-semibold uppercase">' + esc(b.platform) + '</span>' +
                 shopNameHtml +
                 stockHtml(b.stock) +
+                riskHtml +
                 '<span class="inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground">' + esc(b.source) + '</span>' +
                 (extraCount > 0 ? '<span class="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 font-mono tabular text-[11px] font-medium text-secondary-foreground">共 ' + g.offers.length + ' 个规格</span>' : '') +
                 (b.observed_at ? '<span class="text-xs text-muted-foreground" title="' + esc(fmtTime(b.observed_at)) + '">' + esc(relTime(b.observed_at)) + '</span>' : '') +
@@ -1646,13 +1829,22 @@
 
         // 数据加载与统计
         function paintStats(meta) {
-          $('stat-items').textContent = (meta.total != null ? meta.total : items.length).toLocaleString('zh-CN');
-          $('stat-shops').textContent = meta.shops_covered != null ? Number(meta.shops_covered).toLocaleString('zh-CN') : '—';
-          $('stat-products').textContent = meta.products ? Object.keys(meta.products).length.toLocaleString('zh-CN') : '—';
-          $('stat-updated').textContent = fmtTime(meta.generated_at);
+          var totalItems = (meta.total != null ? meta.total : items.length).toLocaleString('zh-CN');
+          var totalShops = meta.shops_covered != null ? Number(meta.shops_covered).toLocaleString('zh-CN') : '—';
+          var totalProds = meta.products ? Object.keys(meta.products).length.toLocaleString('zh-CN') : '—';
+          var updatedStr = fmtTime(meta.generated_at);
+          $('stat-items').textContent = totalItems;
+          $('stat-shops').textContent = totalShops;
+          $('stat-products').textContent = totalProds;
+          $('stat-updated').textContent = updatedStr;
+          if (els.statsInline) {
+            var shortTime = meta.generated_at ? relTime(meta.generated_at) : updatedStr;
+            els.statsInline.textContent = totalItems + ' 报价 · ' + totalShops + ' 店 · ' + totalProds + ' 商品 · 更新于 ' + shortTime;
+          }
         }
         function populate(data) {
           items = data.items || [];
+          buildProductPriceStats();
           paintStats(data.meta || {});
           var srcCounts = {};
           items.forEach(function (r) { if (r.source) srcCounts[r.source] = (srcCounts[r.source] || 0) + 1; });
