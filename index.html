@@ -183,6 +183,38 @@
         .filter-sheet-panel { max-height:88vh; }
       }
       @media (min-width:640px) { #filter-sheet { display:none!important; } }
+      /* 详情页按店铺聚合（方案 B）样式 */
+      .detail-mode-toggle { display:inline-flex; border:1px solid hsl(var(--border)); border-radius:calc(var(--radius)); background:hsl(var(--card)); padding:2px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+      .detail-mode-btn { height:30px; padding:0 12px; border-radius:calc(var(--radius) - 2px); font-size:12.5px; font-weight:500; color:hsl(var(--muted-foreground)); transition:background .15s,color .15s; }
+      .detail-mode-btn:hover { color:hsl(var(--foreground)); }
+      .detail-mode-btn.is-active { background:hsl(var(--primary)); color:hsl(var(--primary-foreground)); box-shadow:0 1px 2px rgba(0,0,0,.05); }
+      .shop-group { border-bottom:1px solid hsl(var(--border)); }
+      .shop-group:last-child { border-bottom:0; }
+      .shop-main { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px 16px; align-items:center; padding:14px 16px; }
+      .shop-main-info { min-width:0; display:flex; flex-direction:column; gap:5px; }
+      .shop-main-top { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+      .shop-main-name { font-size:14px; font-weight:600; color:hsl(var(--foreground)); }
+      .shop-main-title { font-size:13.5px; color:hsl(var(--muted-foreground)); line-height:1.45; word-break:break-word; }
+      .shop-main-right { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+      .shop-price-box { text-align:right; }
+      .shop-price-hint { font-size:11px; color:hsl(var(--muted-foreground)); }
+      .shop-expand-btn { display:inline-flex; align-items:center; gap:4px; height:36px; padding:0 11px; border:1px solid hsl(var(--border)); border-radius:calc(var(--radius)); background:hsl(var(--secondary)); color:hsl(var(--secondary-foreground)); font-size:12.5px; font-weight:500; white-space:nowrap; transition:background .15s; }
+      .shop-expand-btn:hover { background:hsl(var(--accent)); }
+      .shop-expand-chevron { transition:transform .15s ease; }
+      .shop-expand-btn[aria-expanded="true"] .shop-expand-chevron { transform:rotate(180deg); }
+      .shop-specs { border-top:1px dashed hsl(var(--border)); background:hsl(var(--secondary)/.45); padding:6px 16px 10px; }
+      .shop-spec-row { display:grid; grid-template-columns:auto minmax(0,1fr) auto auto; gap:8px 12px; align-items:center; padding:8px 0; border-bottom:1px solid hsl(var(--border)/.6); font-size:13px; }
+      .shop-spec-row:last-child { border-bottom:0; }
+      .shop-spec-title { min-width:0; word-break:break-word; line-height:1.4; }
+      .shop-spec-meta { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-top:3px; font-size:11.5px; color:hsl(var(--muted-foreground)); }
+      @media (max-width:639.98px) {
+        .shop-main { grid-template-columns:1fr; gap:10px; padding:12px 14px; }
+        .shop-main-right { justify-content:space-between; }
+        .shop-price-box { text-align:left; }
+        .shop-specs { padding:6px 12px 10px; }
+        .shop-spec-row { grid-template-columns:minmax(0,1fr) auto; }
+        .shop-spec-row .shop-spec-badges { grid-column:1 / -1; }
+      }
     </style>
   </head>
   <body class="font-sans antialiased text-[15px] leading-relaxed">
@@ -237,8 +269,8 @@
         <div id="advanced-filters">
         <div class="flex flex-wrap items-center justify-between gap-2.5 mt-2.5">
           <div class="inline-flex rounded-lg border bg-card p-0.5 shadow-sm" role="group" aria-label="视图切换">
-            <button id="view-all" type="button" class="h-8 px-3.5 rounded-md text-sm font-medium transition">全部报价</button>
             <button id="view-products" type="button" class="h-8 px-3.5 rounded-md text-sm font-medium transition">标准商品</button>
+            <button id="view-all" type="button" class="h-8 px-3.5 rounded-md text-sm font-medium transition">全部报价</button>
           </div>
           <div class="sc-hot-links" id="hot-links" aria-label="热门直达">
             <span class="sc-hot-label">热门：</span>
@@ -277,7 +309,13 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" id="grid" hidden></div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" id="product-grid" hidden></div>
         <section id="detail-view" hidden>
-          <button id="detail-back" type="button" class="inline-flex items-center gap-1 h-9 px-3.5 rounded-lg border bg-card text-sm font-medium shadow-sm hover:bg-accent active:translate-y-px transition">‹ 返回全部</button>
+          <div class="flex flex-wrap items-center justify-between gap-2.5">
+            <button id="detail-back" type="button" class="inline-flex items-center gap-1 h-9 px-3.5 rounded-lg border bg-card text-sm font-medium shadow-sm hover:bg-accent active:translate-y-px transition">‹ 返回全部</button>
+            <div class="detail-mode-toggle" role="group" aria-label="详情聚合方式">
+              <button id="detail-mode-shop" type="button" class="detail-mode-btn is-active">按店铺聚合</button>
+              <button id="detail-mode-flat" type="button" class="detail-mode-btn">展开全部报价</button>
+            </div>
+          </div>
           <div class="mt-3.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1.5">
             <div class="min-w-0">
               <h2 id="detail-title" class="text-[22px] font-semibold tracking-tight leading-snug break-words"></h2>
@@ -358,8 +396,10 @@
         var page = 1;
         var shops = [];
         var activeVendor = '';
-        var viewMode = 'all';
-        var detailSourceView = 'all';
+        var viewMode = 'products';
+        var detailSourceView = 'products';
+        var detailGroupMode = 'shop';
+        var expandedShops = {};
         var detailSlug = '';
         var detailLimit = 100;
         var autoTimer = null;
@@ -374,6 +414,7 @@
           detailView: $('detail-view'), detailBody: $('detail-body'), detailTitle: $('detail-title'),
           detailSub: $('detail-sub'), detailMeta: $('detail-meta'), detailMore: $('detail-more'),
           detailCount: $('detail-count'), detailBack: $('detail-back'),
+          detailModeShop: $('detail-mode-shop'), detailModeFlat: $('detail-mode-flat'),
           viewAll: $('view-all'), viewProducts: $('view-products'),
           resultLine: $('result-line'), pager: $('pager'), pgInfo: $('pg-info'),
           vendorChips: $('vendor-chips'),
@@ -424,11 +465,18 @@
             web: /网页号|仅网页|纯网页/.test(t)
           };
         }
-        // 窄口径杂项过滤（纵深防御）：这类行不参与最低价 / 质保最低价计算。
-        // 注意只匹配「封号的 / 死号的 / 已封号」，「封号质保 / 封号双保 / 质保封号」是质保承诺，不在此列。
-        var JUNK_RE = /教程|教学|攻略|补差价|咨询客服|乞讨|不发货|无法登陆|无法登录|无法使用|封号的|死号的|已封号/;
+        // 窄口径杂项过滤（与 add_product_field.py 保持完全一致）：这类行不参与最低价 / 质保最低价计算。
+        // 注意只匹配「封号的 / 死号的 / 已封号」，不踢「封号质保」；孤立「补差价」踢除，但保留「可补差价升级 / Plus月卡（补差价）」等主商品。
+        var JUNK_BASE_RE = /教程|教学|攻略|咨询客服|乞讨|不发货|无法登陆|无法登录|封号的|死号的|已封号/;
+        var DIFF_JUNK_RE = /(?:^|[\s|/【\[（(·])(?:升级)?补差价(?:专用|链接|专拍)?(?:$|[\s|/】\]）)·])/;
+        var REAL_SUB_RE = /plus|pro|team|go|max|ultra|月卡|季卡|年卡|成品|代充|直充|续费/i;
         var NO_WARRANTY_RE = /无质保|不质保|不包质保/;
-        function isJunkTitle(title) { return JUNK_RE.test(title || ''); }
+        function isJunkTitle(title) {
+          var t = title || '';
+          if (JUNK_BASE_RE.test(t)) return true;
+          if (DIFF_JUNK_RE.test(t) && !REAL_SUB_RE.test(t)) return true;
+          return false;
+        }
         function hasWarranty(title) {
           var t = title || '';
           return t.indexOf('质保') !== -1 && !NO_WARRANTY_RE.test(t);
@@ -592,9 +640,19 @@
           var id = comboOpenId;
           if (!id) return;
           $(id).value = value || '';
-          if (id === 'f-product' && $(id).value && viewMode !== 'all') { viewMode = 'all'; paintViewToggle(); }
           syncSelectUI(id);
           closeCombo(true);
+          if (id === 'f-product') {
+            if ($(id).value && viewMode !== 'all') {
+              openDetail($(id).value);
+              return;
+            }
+            if (!$(id).value && viewMode === 'detail') {
+              viewMode = detailSourceView === 'all' ? 'all' : 'products';
+              detailSlug = '';
+              paintViewToggle();
+            }
+          }
           applyFilters();
         }
         function closeCombo(restoreFocus) {
@@ -638,7 +696,14 @@
           if (key === 'q') els.q.value = '';
           else if (key === 'vendor') { activeVendor = ''; renderVendorChips(); rebuildCategory(); rebuildProduct(); }
           else if (key === 'category') els.category.value = '';
-          else if (key === 'product') els.product.value = '';
+          else if (key === 'product') {
+            els.product.value = '';
+            if (viewMode === 'detail') {
+              detailSlug = '';
+              viewMode = detailSourceView === 'all' ? 'all' : 'products';
+              paintViewToggle();
+            }
+          }
           else if (key === 'platform') els.platform.value = '';
           else if (key === 'source') els.source.value = '';
           else if (key === 'shop') els.shop.value = '';
@@ -652,15 +717,26 @@
           var buttons = els.hotLinks.querySelectorAll('[data-hot]');
           for (var i = 0; i < buttons.length; i++) {
             var term = buttons[i].getAttribute('data-hot').toLowerCase();
-            var value = selectedText('f-product').toLowerCase();
-            buttons[i].classList.toggle('is-active', !!els.product.value && value.indexOf(term) !== -1);
+            var activeSlug = viewMode === 'detail' ? detailSlug : els.product.value;
+            var labelText = activeSlug ? (function (slug) {
+              for (var gi = 0; gi < productGroups.length; gi++) {
+                var ps = productGroups[gi].products || [];
+                for (var pi = 0; pi < ps.length; pi++) {
+                  if (ps[pi].slug === slug) return ps[pi].label;
+                }
+              }
+              return '';
+            })(activeSlug) : '';
+            buttons[i].classList.toggle('is-active', !!activeSlug && labelText.toLowerCase().indexOf(term) !== -1);
           }
         }
         function resetFilters() {
           els.q.value = ''; els.platform.value = ''; els.source.value = ''; els.category.value = ''; els.product.value = ''; els.shop.value = '';
           els.pMin.value = ''; els.pMax.value = ''; els.sort.value = ''; els.inStock.checked = false; els.inStock.setAttribute('aria-checked', 'false');
           detailSlug = '';
-          if (viewMode === 'detail') { viewMode = 'all'; paintViewToggle(); }
+          expandedShops = {};
+          detailGroupMode = 'shop';
+          if (viewMode === 'detail') { viewMode = detailSourceView === 'all' ? 'all' : 'products'; paintViewToggle(); }
           activeVendor = ''; renderVendorChips(); rebuildCategory(); rebuildProduct(); syncAllSelects(); applyFilters();
         }
         function openFilterSheet() {
@@ -692,6 +768,11 @@
           for (var i = 0; i < btns.length; i++) {
             btns[i].addEventListener('click', function () {
               activeVendor = this.getAttribute('data-vendor') || '';
+              if (viewMode === 'detail') {
+                detailSlug = '';
+                viewMode = detailSourceView === 'all' ? 'all' : 'products';
+                paintViewToggle();
+              }
               renderVendorChips();
               rebuildCategory();
               rebuildProduct();
@@ -989,7 +1070,12 @@
             p.topVendor = top;
             return p;
           });
-          arr.sort(function (a, b) { return b.count - a.count || a.label.localeCompare(b.label); });
+          arr.sort(function (a, b) {
+            var oa = a.slug === 'other-product' ? 1 : 0;
+            var ob = b.slug === 'other-product' ? 1 : 0;
+            if (oa !== ob) return oa - ob;
+            return b.count - a.count || a.label.localeCompare(b.label);
+          });
           return arr;
         }
 
@@ -997,7 +1083,7 @@
           var agg = computeProductAgg();
           els.detailView.hidden = true;
           els.resultLine.innerHTML = '共 <b class="text-foreground font-mono tabular font-semibold">' + agg.length.toLocaleString('zh-CN') + '</b> 个标准商品' +
-            (activeVendor ? ' · 厂商 ' + esc(activeVendor) : '') + ' · 按报价行数从多到少，点卡片进入该商品的报价行表';
+            (activeVendor ? ' · 厂商 ' + esc(activeVendor) : '') + ' · 按报价行数从多到少，点卡片进入按店铺聚合比价';
           var lowest = $('lowest-line');
           lowest.hidden = true;
           lowest.innerHTML = '';
@@ -1057,17 +1143,32 @@
           if (d) return d;
           d = a.price - b.price;
           if (d) return d;
+          var da = (a.source !== 'AI价网' && a.item_url) ? 1 : 0;
+          var db = (b.source !== 'AI价网' && b.item_url) ? 1 : 0;
+          if (db !== da) return db - da;
           var ta = a.observed_at ? new Date(a.observed_at).getTime() : 0;
           var tb = b.observed_at ? new Date(b.observed_at).getTime() : 0;
           return tb - ta;
         }
+        function shopGroupKey(r) {
+          var name = String(r.shop_name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+          return (r.platform || '') + '|' + (name || String(r.shop_id || '').trim().toLowerCase());
+        }
+        function paintDetailModeToggle() {
+          if (!els.detailModeShop || !els.detailModeFlat) return;
+          els.detailModeShop.classList.toggle('is-active', detailGroupMode === 'shop');
+          els.detailModeFlat.classList.toggle('is-active', detailGroupMode === 'flat');
+        }
         function openDetail(slug) {
           if (!slug) return;
+          if (detailSlug !== slug) expandedShops = {};
           detailSlug = slug;
           detailSourceView = viewMode === 'detail' ? detailSourceView : viewMode;
           detailLimit = 100;
           viewMode = 'detail';
           paintViewToggle();
+          paintDetailModeToggle();
+          updateHotLinks();
           renderDetail();
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }
@@ -1086,6 +1187,7 @@
           lowest.innerHTML = '';
           els.resultLine.innerHTML = '';
           els.detailView.hidden = false;
+          paintDetailModeToggle();
           var label = detailSlug, vendor = '';
           if (rows.length) {
             label = rows[0].product_label || detailSlug;
@@ -1099,6 +1201,7 @@
             }
           }
           var inStock = 0, outStock = 0, unknownStock = 0, latest = '', latestT = 0;
+          var shopMap = {}, shopGroups = [];
           rows.forEach(function (r) {
             if (r.stock > 0) inStock++;
             else if (r.stock === 0) outStock++;
@@ -1107,10 +1210,34 @@
               var ot = new Date(r.observed_at).getTime();
               if (!isNaN(ot) && ot > latestT) { latestT = ot; latest = r.observed_at; }
             }
+            var sk = shopGroupKey(r);
+            var g = shopMap[sk];
+            if (!g) {
+              g = shopMap[sk] = { key: sk, offers: [], inStock: 0, latest: '', latestT: 0 };
+              shopGroups.push(g);
+            }
+            g.offers.push(r);
+            if (r.stock > 0) g.inStock++;
+            if (r.observed_at) {
+              var got = new Date(r.observed_at).getTime();
+              if (!isNaN(got) && got > g.latestT) { g.latestT = got; g.latest = r.observed_at; }
+            }
           });
+          shopGroups.forEach(function (g) {
+            g.offers.sort(compareDetail);
+            g.best = g.offers[0];
+          });
+          if (els.sort.value === 'asc') {
+            shopGroups.sort(function (a, b) { return a.best.price - b.best.price || compareDetail(a.best, b.best); });
+          } else if (els.sort.value === 'desc') {
+            shopGroups.sort(function (a, b) { return b.best.price - a.best.price || compareDetail(a.best, b.best); });
+          } else {
+            shopGroups.sort(function (a, b) { return compareDetail(a.best, b.best); });
+          }
+          var shopsInStock = shopGroups.filter(function (g) { return g.inStock > 0; }).length;
           els.detailTitle.textContent = label;
-          els.detailSub.textContent = vendor ? vendor + ' · 标准商品报价行' : '标准商品报价行';
-          els.detailMeta.innerHTML = '报价行 ' + rows.length.toLocaleString('zh-CN') + ' 条 · 有货（含标记）' + inStock.toLocaleString('zh-CN') + ' 行 · 缺货 ' + outStock.toLocaleString('zh-CN') + ' · 库存未公开 ' + unknownStock.toLocaleString('zh-CN') + ' · 按有货优先、低价排序' +
+          els.detailSub.textContent = (vendor ? vendor + ' · ' : '') + (detailGroupMode === 'shop' ? '按店铺聚合（每家店显示最低价规格，可展开该店其余规格）' : '标准商品全部报价行');
+          els.detailMeta.innerHTML = '共 ' + shopGroups.length.toLocaleString('zh-CN') + ' 家店铺（有货 ' + shopsInStock.toLocaleString('zh-CN') + ' 家）· 报价 ' + rows.length.toLocaleString('zh-CN') + ' 条 · 有货 ' + inStock.toLocaleString('zh-CN') + ' · 缺货 ' + outStock.toLocaleString('zh-CN') +
             (latest ? ' · 最近更新 ' + esc(relTime(latest)) : '');
           if (!rows.length) {
             els.detailBody.innerHTML = '<p class="text-center text-muted-foreground py-10 px-4">当前筛选下暂无报价，点「返回全部」调整筛选条件。</p>';
@@ -1118,6 +1245,88 @@
             els.detailCount.textContent = '';
             return;
           }
+          if (detailGroupMode === 'shop') {
+            var shopSlice = shopGroups.slice(0, detailLimit);
+            var shtml = '';
+            shopSlice.forEach(function (g) {
+              var b = g.best;
+              var buyUrl = b.item_url || b.shop_url || '';
+              var exitAttrs = ' data-exit data-title="' + esc(b.title) + '" data-platform="' + esc(b.platform) + '" data-price="' + (b.price != null ? b.price : '') + '"';
+              var shopNameHtml = b.shop_url
+                ? '<a class="shop-main-name no-underline hover:underline break-words" href="' + esc(b.shop_url) + '" target="_blank" rel="noopener" title="' + esc(b.shop_name) + '"' + exitAttrs + '>' + esc(b.shop_name) + '</a>'
+                : '<span class="shop-main-name break-words" title="' + esc(b.shop_name) + '">' + esc(b.shop_name) + '</span>';
+              var extraCount = g.offers.length - 1;
+              var isExpanded = !!expandedShops[g.key];
+              shtml += '<div class="shop-group">' +
+                '<div class="shop-main">' +
+                '<div class="shop-main-info">' +
+                '<div class="shop-main-top">' +
+                '<span class="inline-flex items-center rounded-md bg-primary text-primary-foreground px-1.5 py-0.5 font-mono text-[10.5px] font-semibold tracking-wide uppercase">' + esc(b.platform) + '</span>' +
+                shopNameHtml +
+                stockHtml(b.stock) +
+                '<span class="inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground">来源 · ' + esc(b.source) + '</span>' +
+                (extraCount > 0 ? '<span class="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 font-mono tabular text-[11px] font-medium text-secondary-foreground">共 ' + g.offers.length + ' 条规格</span>' : '') +
+                (g.latest ? '<span class="text-xs text-muted-foreground" title="' + esc(fmtTime(g.latest)) + '">更新于 ' + esc(relTime(g.latest)) + '</span>' : '') +
+                '</div>' +
+                '<div class="shop-main-title">' + esc(b.title) + '</div>' +
+                '</div>' +
+                '<div class="shop-main-right">' +
+                '<div class="shop-price-box">' +
+                '<div class="font-mono tabular text-2xl font-bold tracking-tight"><span class="text-sm font-semibold">¥</span>' + fmtPrice(b.price) + '</div>' +
+                (extraCount > 0 ? '<div class="shop-price-hint">本店最低价起</div>' : '') +
+                '</div>' +
+                (extraCount > 0
+                  ? '<button type="button" class="shop-expand-btn" data-shop-toggle="' + esc(g.key) + '" aria-expanded="' + (isExpanded ? 'true' : 'false') + '">' +
+                    '<span>' + (isExpanded ? '收起其余 ' + extraCount + ' 条' : '其余 ' + extraCount + ' 个规格') + '</span>' +
+                    '<svg class="shop-expand-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
+                    '</button>'
+                  : '') +
+                (buyUrl
+                  ? '<a class="buy-link shrink-0 inline-flex items-center h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition" href="' + esc(buyUrl) + '" target="_blank" rel="noopener"' + exitAttrs + '>前往购买</a>'
+                  : '<span class="inline-flex items-center h-9 px-4 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">暂无购买链接</span>') +
+                '</div>' +
+                '</div>';
+              if (extraCount > 0 && isExpanded) {
+                shtml += '<div class="shop-specs">';
+                for (var oi = 1; oi < g.offers.length; oi++) {
+                  var r = g.offers[oi];
+                  var rBuyUrl = r.item_url || r.shop_url || '';
+                  var rExitAttrs = ' data-exit data-title="' + esc(r.title) + '" data-platform="' + esc(r.platform) + '" data-price="' + (r.price != null ? r.price : '') + '"';
+                  shtml += '<div class="shop-spec-row">' +
+                    '<div class="shop-spec-badges flex items-center gap-1.5 flex-wrap">' + stockHtml(r.stock) +
+                    '<span class="inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground">' + esc(r.source) + '</span></div>' +
+                    '<div class="shop-spec-title">' + esc(r.title) +
+                    '<div class="shop-spec-meta">' +
+                    (r.observed_at ? '<span title="' + esc(fmtTime(r.observed_at)) + '">抓取于 ' + esc(relTime(r.observed_at)) + '</span>' : '') +
+                    (isStale(r.observed_at) ? '<span>待核验</span>' : '') +
+                    '</div></div>' +
+                    '<div class="font-mono tabular text-base font-bold whitespace-nowrap">¥' + fmtPrice(r.price) + '</div>' +
+                    '<div>' + (rBuyUrl
+                      ? '<a class="buy-link inline-flex items-center h-8 px-3 rounded-md border bg-card text-xs font-medium shadow-sm hover:bg-accent transition whitespace-nowrap" href="' + esc(rBuyUrl) + '" target="_blank" rel="noopener"' + rExitAttrs + '>去购买</a>'
+                      : '<span class="text-xs text-muted-foreground whitespace-nowrap">暂无链接</span>') +
+                    '</div></div>';
+                }
+                shtml += '</div>';
+              }
+              shtml += '</div>';
+            });
+            els.detailBody.innerHTML = shtml;
+            var toggleBtns = els.detailBody.querySelectorAll('button[data-shop-toggle]');
+            for (var ti = 0; ti < toggleBtns.length; ti++) {
+              toggleBtns[ti].addEventListener('click', function () {
+                var sk = this.getAttribute('data-shop-toggle') || '';
+                if (expandedShops[sk]) delete expandedShops[sk];
+                else expandedShops[sk] = true;
+                renderDetail();
+              });
+            }
+            els.detailMore.hidden = shopGroups.length <= detailLimit;
+            els.detailMore.textContent = '显示更多店铺';
+            els.detailCount.textContent = '已显示 ' + shopSlice.length.toLocaleString('zh-CN') + ' / ' + shopGroups.length.toLocaleString('zh-CN') + ' 家店铺（共 ' + rows.length.toLocaleString('zh-CN') + ' 条报价）';
+            return;
+          }
+          if (els.sort.value === 'asc') rows.sort(function (a, b) { return a.price - b.price || compareDetail(a, b); });
+          else if (els.sort.value === 'desc') rows.sort(function (a, b) { return b.price - a.price || compareDetail(a, b); });
           var slice = rows.slice(0, detailLimit);
           var html = '<table class="detail-table w-full text-sm"><thead><tr class="border-b bg-secondary/60 text-left text-xs text-muted-foreground">' +
             '<th class="px-3.5 py-2.5 font-medium whitespace-nowrap">状态</th>' +
@@ -1147,6 +1356,7 @@
           html += '</tbody></table>';
           els.detailBody.innerHTML = html;
           els.detailMore.hidden = rows.length <= detailLimit;
+          els.detailMore.textContent = '显示更多报价';
           els.detailCount.textContent = '已显示 ' + slice.length.toLocaleString('zh-CN') + ' / ' + rows.length.toLocaleString('zh-CN') + ' 条';
         }
 
@@ -1384,7 +1594,15 @@
         });
         els.inStock.addEventListener('change', function () { els.inStock.setAttribute('aria-checked', els.inStock.checked ? 'true' : 'false'); applyFilters(); });
         els.product.addEventListener('change', function () {
-          if (els.product.value && viewMode !== 'all') { viewMode = 'all'; paintViewToggle(); }
+          if (els.product.value && viewMode !== 'all') {
+            openDetail(els.product.value);
+            return;
+          }
+          if (!els.product.value && viewMode === 'detail') {
+            detailSlug = '';
+            viewMode = detailSourceView === 'all' ? 'all' : 'products';
+            paintViewToggle();
+          }
           applyFilters();
         });
         els.filterToggle.addEventListener('click', function () {
@@ -1438,12 +1656,22 @@
                 }
               }
               if (matchedSlug) {
-                if (els.product.value === matchedSlug) {
+                if (viewMode === 'detail' && detailSlug === matchedSlug) {
+                  els.product.value = '';
+                  detailSlug = '';
+                  viewMode = detailSourceView === 'all' ? 'all' : 'products';
+                  paintViewToggle();
+                } else if (viewMode !== 'all') {
+                  if (activeVendor) { activeVendor = ''; renderVendorChips(); rebuildCategory(); rebuildProduct(); }
+                  els.product.value = matchedSlug;
+                  syncAllSelects();
+                  openDetail(matchedSlug);
+                  return;
+                } else if (els.product.value === matchedSlug) {
                   els.product.value = '';
                 } else {
                   if (activeVendor) { activeVendor = ''; renderVendorChips(); rebuildCategory(); rebuildProduct(); }
                   els.product.value = matchedSlug;
-                  if (viewMode !== 'all') { viewMode = 'all'; paintViewToggle(); }
                 }
               } else {
                 els.q.value = els.q.value.trim().toLowerCase() === tl ? '' : term;
@@ -1509,8 +1737,28 @@
         }
         els.grid.addEventListener('click', handleExitClick);
         els.detailBody.addEventListener('click', handleExitClick);
-        els.detailBack.addEventListener('click', function () { setView(detailSourceView === 'products' ? 'products' : 'all'); });
-        els.detailMore.addEventListener('click', function () { detailLimit += 200; renderDetail(); });
+        els.detailBack.addEventListener('click', function () {
+          if (els.product.value && els.product.value === detailSlug) {
+            els.product.value = '';
+            syncSelectUI('f-product');
+          }
+          detailSlug = '';
+          updateHotLinks();
+          setView(detailSourceView === 'all' ? 'all' : 'products');
+        });
+        els.detailModeShop.addEventListener('click', function () {
+          if (detailGroupMode === 'shop') return;
+          detailGroupMode = 'shop';
+          detailLimit = 100;
+          renderDetail();
+        });
+        els.detailModeFlat.addEventListener('click', function () {
+          if (detailGroupMode === 'flat') return;
+          detailGroupMode = 'flat';
+          detailLimit = 100;
+          renderDetail();
+        });
+        els.detailMore.addEventListener('click', function () { detailLimit += (detailGroupMode === 'shop' ? 100 : 200); renderDetail(); });
         $('exit-cancel').addEventListener('click', closeExit);
         $('exit-backdrop').addEventListener('click', closeExit);
         $('exit-confirm').addEventListener('click', function () {
