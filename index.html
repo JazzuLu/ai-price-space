@@ -346,9 +346,10 @@
           <li><a class="underline underline-offset-2 hover:text-foreground" href="https://biwu.ai" target="_blank" rel="noopener">BiWu.Ai</a>：标准商品页的全渠道报价表。抓取时间 2026-11-19 18:28（CST）。</li>
           <li><a class="underline underline-offset-2 hover:text-foreground" href="https://shuita.xyz" target="_blank" rel="noopener">水獭（shuita.xyz）</a>：仅并入派生报价行，价格为含手续费到手价。注意：本次并入的 20 行是 2026-11-14 的缓存数据（其 MCP 当日取数被拦），时效弱于其他源，比价时请留意。</li>
           <li><a class="underline underline-offset-2 hover:text-foreground" href="https://priceai.cc" target="_blank" rel="noopener">PriceAI（priceai.cc）</a>：公开快照的报价行。抓取时间 2026-11-19 20:56（CST）。本次并入 302 条新行，另有 13 条以其更新鲜的报价替换了同款旧行，现存 315 行。</li>
-          <li>链动小铺（wzyp.cn）与云猫寄售（catfk.com）直抓：本次两站接口与店铺页均被阿里云 ESA 人机验证拦截，直抓为 0 行，未硬闯验证；表中 wzyp / 云猫平台的行来自上面聚合源。CardNav 仅用于发现店铺与交叉核对，报价未并入。</li>
+          <li><a class="underline underline-offset-2 hover:text-foreground" href="https://cardnav.xyz" target="_blank" rel="noopener">CardNav（cardnav.xyz）</a>：公开商品快照（批量 JSON 接口），按 `autoCategory` 与标题规则归类，跨源重复时仅以更新鲜的报价替换旧行。</li>
+          <li>链动小铺（wzyp.cn）与云猫寄售（catfk.com）直抓：两站接口与店铺页均受阿里云 ESA 人机验证拦截，直抓为 0 行，未硬闯验证；表中 wzyp / 云猫平台的行来自上面聚合源。</li>
         </ul>
-        <p class="text-xs">库存口径：数字仅在源站提供数量时代表库存件数；部分来源只有「有货 / 缺货」标记，有货仅表示有货标记，不代表具体件数；源站未公开库存的记为「库存未公开」。价格为抓取时点的原站报价，可能已变动，下单前请以原站页面为准。去重规则：平台 + 店铺标识 + 标题 + 价格，同一商品优先保留直抓行（本次无直抓行），其次 AI价网、BiWu、水獭；PriceAI 与旧行同款时以更新鲜的 PriceAI 行替换。分类按厂商聚合：ChatGPT 各产品线归 OpenAI，Claude 归 Anthropic，Gemini 归 Google，Grok 归 xAI；「产品线」筛选保留原细分分类。「刷新数据」只重新拉取本页的数据文件，不会重新采集源站数据。</p>
+        <p class="text-xs">库存口径：数字仅在源站提供数量时代表库存件数；部分来源只有「有货 / 缺货」标记，有货仅表示有货标记，不代表具体件数；源站未公开库存的记为「库存未公开」。价格为抓取时点的原站报价，可能已变动，下单前请以原站页面为准。去重规则：先按同商品直链去重（保留同页不同规格），再做严格跨源同店同标题同价去重（优先保留带直链且观察时间更新的来源；wzyp / 云猫按平台店铺 ID 区分同名异店）。分类按标准商品口径对齐「厂商 → 产品线 → 标准商品」三级结构。「刷新数据」只重新拉取本页的数据文件，不会重新采集源站数据。</p>
       </footer>
     </div>
 
@@ -400,6 +401,7 @@
         var detailSourceView = 'products';
         var detailGroupMode = 'shop';
         var expandedShops = {};
+        var detailShopGroupMap = {};
         var detailSlug = '';
         var detailLimit = 100;
         var autoTimer = null;
@@ -648,9 +650,7 @@
               return;
             }
             if (!$(id).value && viewMode === 'detail') {
-              viewMode = detailSourceView === 'all' ? 'all' : 'products';
-              detailSlug = '';
-              paintViewToggle();
+              exitDetailTo(detailSourceView === 'all' ? 'all' : 'products');
             }
           }
           applyFilters();
@@ -699,9 +699,7 @@
           else if (key === 'product') {
             els.product.value = '';
             if (viewMode === 'detail') {
-              detailSlug = '';
-              viewMode = detailSourceView === 'all' ? 'all' : 'products';
-              paintViewToggle();
+              exitDetailTo(detailSourceView === 'all' ? 'all' : 'products');
             }
           }
           else if (key === 'platform') els.platform.value = '';
@@ -769,9 +767,7 @@
             btns[i].addEventListener('click', function () {
               activeVendor = this.getAttribute('data-vendor') || '';
               if (viewMode === 'detail') {
-                detailSlug = '';
-                viewMode = detailSourceView === 'all' ? 'all' : 'products';
-                paintViewToggle();
+                exitDetailTo(detailSourceView === 'all' ? 'all' : 'products');
               }
               renderVendorChips();
               rebuildCategory();
@@ -1151,13 +1147,29 @@
           return tb - ta;
         }
         function shopGroupKey(r) {
+          var pf = r.platform || '';
+          var sid = String(r.shop_id || '').trim().toLowerCase();
+          // wzyp / 云猫 各源均使用稳定平台 shop_id，按 shop_id 聚合避免「AI小店」等同名称异店被错误合并
+          if ((pf === 'wzyp' || pf === '云猫') && sid) {
+            return pf + '|id:' + sid;
+          }
           var name = String(r.shop_name || '').replace(/\s+/g, ' ').trim().toLowerCase();
-          return (r.platform || '') + '|' + (name || String(r.shop_id || '').trim().toLowerCase());
+          return pf + '|' + (name || sid);
         }
         function paintDetailModeToggle() {
           if (!els.detailModeShop || !els.detailModeFlat) return;
           els.detailModeShop.classList.toggle('is-active', detailGroupMode === 'shop');
           els.detailModeFlat.classList.toggle('is-active', detailGroupMode === 'flat');
+        }
+        function exitDetailTo(targetMode) {
+          if (els.product.value && els.product.value === detailSlug) {
+            els.product.value = '';
+            syncSelectUI('f-product');
+          }
+          detailSlug = '';
+          viewMode = targetMode === 'all' ? 'all' : 'products';
+          paintViewToggle();
+          updateHotLinks();
         }
         function openDetail(slug) {
           if (!slug) return;
@@ -1166,11 +1178,37 @@
           detailSourceView = viewMode === 'detail' ? detailSourceView : viewMode;
           detailLimit = 100;
           viewMode = 'detail';
+          if (els.filterSheet && !els.filterSheet.hidden) closeFilterSheet();
           paintViewToggle();
           paintDetailModeToggle();
+          updateFilterCount();
+          renderActiveFilters();
           updateHotLinks();
           renderDetail();
           window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        function renderShopSpecsHtml(g) {
+          var html = '<div class="shop-specs">';
+          for (var oi = 1; oi < g.offers.length; oi++) {
+            var r = g.offers[oi];
+            var rBuyUrl = r.item_url || r.shop_url || '';
+            var rExitAttrs = ' data-exit data-title="' + esc(r.title) + '" data-platform="' + esc(r.platform) + '" data-price="' + (r.price != null ? r.price : '') + '"';
+            html += '<div class="shop-spec-row">' +
+              '<div class="shop-spec-badges flex items-center gap-1.5 flex-wrap">' + stockHtml(r.stock) +
+              '<span class="inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground">' + esc(r.source) + '</span></div>' +
+              '<div class="shop-spec-title">' + esc(r.title) +
+              '<div class="shop-spec-meta">' +
+              (r.observed_at ? '<span title="' + esc(fmtTime(r.observed_at)) + '">抓取于 ' + esc(relTime(r.observed_at)) + '</span>' : '') +
+              (isStale(r.observed_at) ? '<span class="inline-flex items-center rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 px-1.5 py-0.5 font-mono text-[10.5px] font-medium whitespace-nowrap">待核验</span>' : '') +
+              '</div></div>' +
+              '<div class="font-mono tabular text-base font-bold whitespace-nowrap">¥' + fmtPrice(r.price) + '</div>' +
+              '<div>' + (rBuyUrl
+                ? '<a class="buy-link inline-flex items-center h-8 px-3 rounded-md border bg-card text-xs font-medium shadow-sm hover:bg-accent transition whitespace-nowrap" href="' + esc(rBuyUrl) + '" target="_blank" rel="noopener"' + rExitAttrs + '>去购买</a>'
+                : '<span class="text-xs text-muted-foreground whitespace-nowrap">暂无链接</span>') +
+              '</div></div>';
+          }
+          html += '</div>';
+          return html;
         }
         function renderDetail() {
           var rows = items.filter(function (r) {
@@ -1178,6 +1216,7 @@
             return matchesActiveFilters(r, false);
           });
           rows.sort(compareDetail);
+          if (els.filterSheetDone) els.filterSheetDone.textContent = '查看 ' + rows.length.toLocaleString('zh-CN') + ' 条结果';
           els.grid.hidden = true;
           els.productGrid.hidden = true;
           els.pager.hidden = true;
@@ -1223,21 +1262,32 @@
               if (!isNaN(got) && got > g.latestT) { g.latestT = got; g.latest = r.observed_at; }
             }
           });
+          var sortMode = els.sort.value;
           shopGroups.forEach(function (g) {
-            g.offers.sort(compareDetail);
+            if (sortMode === 'asc') {
+              g.offers.sort(function (a, b) { return a.price - b.price || compareDetail(a, b); });
+            } else if (sortMode === 'desc') {
+              g.offers.sort(function (a, b) { return b.price - a.price || compareDetail(a, b); });
+            } else {
+              g.offers.sort(compareDetail);
+            }
             g.best = g.offers[0];
           });
-          if (els.sort.value === 'asc') {
+          if (sortMode === 'asc') {
             shopGroups.sort(function (a, b) { return a.best.price - b.best.price || compareDetail(a.best, b.best); });
-          } else if (els.sort.value === 'desc') {
+          } else if (sortMode === 'desc') {
             shopGroups.sort(function (a, b) { return b.best.price - a.best.price || compareDetail(a.best, b.best); });
           } else {
             shopGroups.sort(function (a, b) { return compareDetail(a.best, b.best); });
           }
+          detailShopGroupMap = shopMap;
           var shopsInStock = shopGroups.filter(function (g) { return g.inStock > 0; }).length;
           els.detailTitle.textContent = label;
-          els.detailSub.textContent = (vendor ? vendor + ' · ' : '') + (detailGroupMode === 'shop' ? '按店铺聚合（每家店显示最低价规格，可展开该店其余规格）' : '标准商品全部报价行');
+          els.detailSub.textContent = (vendor ? vendor + ' · ' : '') + (detailGroupMode === 'shop'
+            ? (sortMode === 'desc' ? '按店铺聚合（每家店显示最高价规格，可展开该店其余规格）' : '按店铺聚合（每家店显示最低价规格，可展开该店其余规格）')
+            : '标准商品全部报价行');
           els.detailMeta.innerHTML = '共 ' + shopGroups.length.toLocaleString('zh-CN') + ' 家店铺（有货 ' + shopsInStock.toLocaleString('zh-CN') + ' 家）· 报价 ' + rows.length.toLocaleString('zh-CN') + ' 条 · 有货 ' + inStock.toLocaleString('zh-CN') + ' · 缺货 ' + outStock.toLocaleString('zh-CN') +
+            (unknownStock > 0 ? ' · 库存未公开 ' + unknownStock.toLocaleString('zh-CN') : '') +
             (latest ? ' · 最近更新 ' + esc(relTime(latest)) : '');
           if (!rows.length) {
             els.detailBody.innerHTML = '<p class="text-center text-muted-foreground py-10 px-4">当前筛选下暂无报价，点「返回全部」调整筛选条件。</p>';
@@ -1247,6 +1297,7 @@
           }
           if (detailGroupMode === 'shop') {
             var shopSlice = shopGroups.slice(0, detailLimit);
+            var priceHintText = sortMode === 'desc' ? '本店最高价' : '本店最低价起';
             var shtml = '';
             shopSlice.forEach(function (g) {
               var b = g.best;
@@ -1257,7 +1308,7 @@
                 : '<span class="shop-main-name break-words" title="' + esc(b.shop_name) + '">' + esc(b.shop_name) + '</span>';
               var extraCount = g.offers.length - 1;
               var isExpanded = !!expandedShops[g.key];
-              shtml += '<div class="shop-group">' +
+              shtml += '<div class="shop-group" data-shop-group="' + esc(g.key) + '">' +
                 '<div class="shop-main">' +
                 '<div class="shop-main-info">' +
                 '<div class="shop-main-top">' +
@@ -1266,18 +1317,19 @@
                 stockHtml(b.stock) +
                 '<span class="inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground">来源 · ' + esc(b.source) + '</span>' +
                 (extraCount > 0 ? '<span class="inline-flex items-center rounded-md bg-secondary px-1.5 py-0.5 font-mono tabular text-[11px] font-medium text-secondary-foreground">共 ' + g.offers.length + ' 条规格</span>' : '') +
-                (g.latest ? '<span class="text-xs text-muted-foreground" title="' + esc(fmtTime(g.latest)) + '">更新于 ' + esc(relTime(g.latest)) + '</span>' : '') +
+                (b.observed_at ? '<span class="text-xs text-muted-foreground" title="' + esc(fmtTime(b.observed_at)) + '">抓取于 ' + esc(relTime(b.observed_at)) + '</span>' : '') +
+                (isStale(b.observed_at) ? '<span class="inline-flex items-center rounded-md bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400 px-1.5 py-0.5 font-mono text-[10.5px] font-medium whitespace-nowrap">待核验</span>' : '') +
                 '</div>' +
                 '<div class="shop-main-title">' + esc(b.title) + '</div>' +
                 '</div>' +
                 '<div class="shop-main-right">' +
                 '<div class="shop-price-box">' +
                 '<div class="font-mono tabular text-2xl font-bold tracking-tight"><span class="text-sm font-semibold">¥</span>' + fmtPrice(b.price) + '</div>' +
-                (extraCount > 0 ? '<div class="shop-price-hint">本店最低价起</div>' : '') +
+                (extraCount > 0 ? '<div class="shop-price-hint">' + priceHintText + '</div>' : '') +
                 '</div>' +
                 (extraCount > 0
                   ? '<button type="button" class="shop-expand-btn" data-shop-toggle="' + esc(g.key) + '" aria-expanded="' + (isExpanded ? 'true' : 'false') + '">' +
-                    '<span>' + (isExpanded ? '收起其余 ' + extraCount + ' 条' : '其余 ' + extraCount + ' 个规格') + '</span>' +
+                    '<span class="shop-expand-label">' + (isExpanded ? '收起其余 ' + extraCount + ' 条' : '其余 ' + extraCount + ' 个规格') + '</span>' +
                     '<svg class="shop-expand-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>' +
                     '</button>'
                   : '') +
@@ -1285,41 +1337,11 @@
                   ? '<a class="buy-link shrink-0 inline-flex items-center h-9 px-4 rounded-lg bg-primary text-primary-foreground text-sm font-medium shadow-sm hover:opacity-90 transition" href="' + esc(buyUrl) + '" target="_blank" rel="noopener"' + exitAttrs + '>前往购买</a>'
                   : '<span class="inline-flex items-center h-9 px-4 rounded-lg bg-secondary text-muted-foreground text-sm font-medium">暂无购买链接</span>') +
                 '</div>' +
+                '</div>' +
+                (extraCount > 0 && isExpanded ? renderShopSpecsHtml(g) : '') +
                 '</div>';
-              if (extraCount > 0 && isExpanded) {
-                shtml += '<div class="shop-specs">';
-                for (var oi = 1; oi < g.offers.length; oi++) {
-                  var r = g.offers[oi];
-                  var rBuyUrl = r.item_url || r.shop_url || '';
-                  var rExitAttrs = ' data-exit data-title="' + esc(r.title) + '" data-platform="' + esc(r.platform) + '" data-price="' + (r.price != null ? r.price : '') + '"';
-                  shtml += '<div class="shop-spec-row">' +
-                    '<div class="shop-spec-badges flex items-center gap-1.5 flex-wrap">' + stockHtml(r.stock) +
-                    '<span class="inline-flex items-center rounded-md border px-1.5 py-0.5 font-mono text-[10.5px] font-medium text-muted-foreground">' + esc(r.source) + '</span></div>' +
-                    '<div class="shop-spec-title">' + esc(r.title) +
-                    '<div class="shop-spec-meta">' +
-                    (r.observed_at ? '<span title="' + esc(fmtTime(r.observed_at)) + '">抓取于 ' + esc(relTime(r.observed_at)) + '</span>' : '') +
-                    (isStale(r.observed_at) ? '<span>待核验</span>' : '') +
-                    '</div></div>' +
-                    '<div class="font-mono tabular text-base font-bold whitespace-nowrap">¥' + fmtPrice(r.price) + '</div>' +
-                    '<div>' + (rBuyUrl
-                      ? '<a class="buy-link inline-flex items-center h-8 px-3 rounded-md border bg-card text-xs font-medium shadow-sm hover:bg-accent transition whitespace-nowrap" href="' + esc(rBuyUrl) + '" target="_blank" rel="noopener"' + rExitAttrs + '>去购买</a>'
-                      : '<span class="text-xs text-muted-foreground whitespace-nowrap">暂无链接</span>') +
-                    '</div></div>';
-                }
-                shtml += '</div>';
-              }
-              shtml += '</div>';
             });
             els.detailBody.innerHTML = shtml;
-            var toggleBtns = els.detailBody.querySelectorAll('button[data-shop-toggle]');
-            for (var ti = 0; ti < toggleBtns.length; ti++) {
-              toggleBtns[ti].addEventListener('click', function () {
-                var sk = this.getAttribute('data-shop-toggle') || '';
-                if (expandedShops[sk]) delete expandedShops[sk];
-                else expandedShops[sk] = true;
-                renderDetail();
-              });
-            }
             els.detailMore.hidden = shopGroups.length <= detailLimit;
             els.detailMore.textContent = '显示更多店铺';
             els.detailCount.textContent = '已显示 ' + shopSlice.length.toLocaleString('zh-CN') + ' / ' + shopGroups.length.toLocaleString('zh-CN') + ' 家店铺（共 ' + rows.length.toLocaleString('zh-CN') + ' 条报价）';
@@ -1599,9 +1621,7 @@
             return;
           }
           if (!els.product.value && viewMode === 'detail') {
-            detailSlug = '';
-            viewMode = detailSourceView === 'all' ? 'all' : 'products';
-            paintViewToggle();
+            exitDetailTo(detailSourceView === 'all' ? 'all' : 'products');
           }
           applyFilters();
         });
@@ -1657,10 +1677,7 @@
               }
               if (matchedSlug) {
                 if (viewMode === 'detail' && detailSlug === matchedSlug) {
-                  els.product.value = '';
-                  detailSlug = '';
-                  viewMode = detailSourceView === 'all' ? 'all' : 'products';
-                  paintViewToggle();
+                  exitDetailTo(detailSourceView === 'all' ? 'all' : 'products');
                 } else if (viewMode !== 'all') {
                   if (activeVendor) { activeVendor = ''; renderVendorChips(); rebuildCategory(); rebuildProduct(); }
                   els.product.value = matchedSlug;
@@ -1681,8 +1698,14 @@
             });
           }
         }
-        els.viewAll.addEventListener('click', function () { setView('all'); });
-        els.viewProducts.addEventListener('click', function () { setView('products'); });
+        els.viewAll.addEventListener('click', function () {
+          if (viewMode === 'detail') { exitDetailTo('all'); applyFilters(); return; }
+          setView('all');
+        });
+        els.viewProducts.addEventListener('click', function () {
+          if (viewMode === 'detail') { exitDetailTo('products'); applyFilters(); return; }
+          setView('products');
+        });
         $('reset').addEventListener('click', resetFilters);
         els.btnRefresh.addEventListener('click', function () { loadData(true); });
         els.autoRefresh.addEventListener('change', function () {
@@ -1736,15 +1759,34 @@
           openExit(url, a.getAttribute('data-title') || '', a.getAttribute('data-platform') || '', parseFloat(a.getAttribute('data-price')));
         }
         els.grid.addEventListener('click', handleExitClick);
-        els.detailBody.addEventListener('click', handleExitClick);
-        els.detailBack.addEventListener('click', function () {
-          if (els.product.value && els.product.value === detailSlug) {
-            els.product.value = '';
-            syncSelectUI('f-product');
+        els.detailBody.addEventListener('click', function (e) {
+          var toggleBtn = e.target && e.target.closest ? e.target.closest('button[data-shop-toggle]') : null;
+          if (toggleBtn) {
+            var sk = toggleBtn.getAttribute('data-shop-toggle') || '';
+            var g = detailShopGroupMap[sk];
+            var groupEl = toggleBtn.closest('.shop-group');
+            if (!g || !groupEl) return;
+            var extraCount = g.offers.length - 1;
+            var labelEl = toggleBtn.querySelector('.shop-expand-label');
+            var specsEl = groupEl.querySelector('.shop-specs');
+            if (expandedShops[sk]) {
+              delete expandedShops[sk];
+              if (specsEl) specsEl.remove();
+              toggleBtn.setAttribute('aria-expanded', 'false');
+              if (labelEl) labelEl.textContent = '其余 ' + extraCount + ' 个规格';
+            } else {
+              expandedShops[sk] = true;
+              if (!specsEl) groupEl.insertAdjacentHTML('beforeend', renderShopSpecsHtml(g));
+              toggleBtn.setAttribute('aria-expanded', 'true');
+              if (labelEl) labelEl.textContent = '收起其余 ' + extraCount + ' 条';
+            }
+            return;
           }
-          detailSlug = '';
-          updateHotLinks();
-          setView(detailSourceView === 'all' ? 'all' : 'products');
+          handleExitClick(e);
+        });
+        els.detailBack.addEventListener('click', function () {
+          exitDetailTo(detailSourceView === 'all' ? 'all' : 'products');
+          applyFilters();
         });
         els.detailModeShop.addEventListener('click', function () {
           if (detailGroupMode === 'shop') return;

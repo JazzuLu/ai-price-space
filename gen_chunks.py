@@ -16,12 +16,20 @@ import sys
 
 BASE = "/home/hatch/workspace/ai-price-space"
 DATA = f"{BASE}/research/data.json"
+MANIFEST = f"{BASE}/research/manifest.json"
 EXPORT_HTML = "/home/hatch/workspace/your_files/aiju-he-bi-jia-kong-jian/aiju-he-bi-jia-kong-jian.html"
 OUT_DIR = f"{BASE}/github/assets"
 N_CHUNKS = 4
 
 
 def load_manifest():
+    # 优先用本地生成的清单（gen_manifest.py）；没有才从导出 HTML 里取
+    try:
+        man = json.load(open(MANIFEST, encoding="utf-8"))
+        assert man["format"] == "compact-v1"
+        return man
+    except (FileNotFoundError, AssertionError):
+        pass
     html = open(EXPORT_HTML, encoding="utf-8").read()
     m = re.search(r"data:application/json;base64,([A-Za-z0-9+/=]+)", html)
     man = json.loads(base64.b64decode(m.group(1)))
@@ -33,7 +41,7 @@ def main():
     man = load_manifest()
     d = json.load(open(DATA, encoding="utf-8"))
     items = d["items"]
-    assert len(items) == man["total"] == 46560, (len(items), man["total"])
+    assert len(items) == man["total"], (len(items), man["total"])
 
     dicts = man["dicts"]
     shop_idx = {tuple(s): i for i, s in enumerate(dicts["shops"])}
