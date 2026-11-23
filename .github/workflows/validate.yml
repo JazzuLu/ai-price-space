@@ -1,0 +1,108 @@
+# Validate-only CI for the AI price space (Jazzu approved 2026-11-23).
+#
+# Why validate-only: the Pages project is GitHub-connected, so every push
+# to main deploys to production immediately — no workflow can gate that.
+# This workflow cannot block a bad deploy; it fails loudly (red X on the
+# commit) so bad data is caught within minutes instead of going unnoticed.
+# It never deploys anything and needs no secrets.
+#
+# What it checks on every push to main (incl. the 6-hourly data refresh)
+# and on PRs:
+# - index.html exists and is a real page (>100KB), with no external CDN
+#   dependency (Tailwind CDN / Google Fonts failing once left unstyled HTML).
+# - data.json parses, has a positive total, lists chunks, and the total is
+#   above an absolute floor (50,000 rows) so a catastrophic data loss fails.
+# - every chunk listed in the manifest exists, parses as a JSON list, and
+#   the summed chunk rows equal the manifest total (integrity check).
+# - the total did not drop >10% vs the previous commit (a refresh should
+#   grow slowly; recent refreshes add ~900 rows each).
+
+name: Validate site + data
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate site + data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Validate index, manifest and shards
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess, sys
+
+          def fail(msg):
+              print(f"::error::{msg}")
+              sys.exit(1)
+
+          if not os.path.exists("index.html") or os.path.getsize("index.html") < 100_000:
+              fail("index.html missing or suspiciously small")
+
+          try:
+              manifest = json.load(open("data.json"))
+          except Exception as e:
+              fail(f"data.json is not valid JSON: {e}")
+
+          total = manifest.get("total")
+          chunks = manifest.get("chunks") or []
+          if not total or total <= 0:
+              fail(f"manifest total invalid: {total!r}")
+          if not chunks:
+              fail("manifest lists no chunks")
+          if total < 50_000:
+              fail(f"manifest total suspiciously low: {total}")
+
+          rows = 0
+          for path in chunks:
+              if not os.path.exists(path):
+                  fail(f"chunk listed in manifest but missing: {path}")
+              try:
+                  data = json.load(open(path))
+              except Exception as e:
+                  fail(f"chunk is not valid JSON: {path}: {e}")
+              if not isinstance(data, list):
+                  fail(f"chunk is not a JSON list: {path}")
+              rows += len(data)
+          if rows != total:
+              fail(f"chunk rows ({rows}) != manifest total ({total})")
+
+          try:
+              prev = subprocess.run(
+                  ["git", "show", "HEAD~1:data.json"],
+                  capture_output=True, text=True, check=True,
+              ).stdout
+              prev_total = json.loads(prev).get("total")
+              if prev_total:
+                  print(f"previous total: {prev_total}")
+                  if total < prev_total * 0.9:
+                      fail(f"total dropped {prev_total} -> {total} (>10%), likely a bad refresh")
+          except (subprocess.CalledProcessError, json.JSONDecodeError):
+              print("no previous data.json to compare, skipping drop check")
+
+          print(f"OK: index.html {os.path.getsize('index.html')} bytes, "
+                f"total {total} rows, {len(chunks)} chunks, "
+                f"shops {manifest.get('meta', {}).get('shops_covered')}")
+
+      - name: Check page has no CDN dependency
+        run: |
+          if grep -E 'cdn\.tailwindcss\.com|fonts\.googleapis\.com|fonts\.gstatic\.com' index.html; then
+            echo "::error::index.html references an external CDN"
+            exit 1
+          fi
+          echo "OK: no CDN references in index.html"
